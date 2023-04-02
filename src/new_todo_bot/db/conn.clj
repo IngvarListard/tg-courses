@@ -1,5 +1,7 @@
 (ns new-todo-bot.db.conn
-  (:require [clojure.java.jdbc :as sql])
+  (:require [clojure.java.jdbc :as sql]
+            [honey.sql :as hsql]
+            [toucan.db :as db])
   (:import (com.mchange.v2.c3p0 ComboPooledDataSource)))
 
 (def db-spec {:classname "org.sqlite.JDBC"
@@ -25,8 +27,22 @@
 
 (defn db-connection [] @pooled-db)
 
+(db/set-default-db-connection! (db-connection))
+
 (comment
 
+  (sql/format
+    {:select [:*]
+     :from :todos
+     ;:where [:= :role "admin"]
+     ;:order-by [:name :asc]
+     })
+  (sql/query (db-connection) (hsql/format
+                       {:select [:*]
+                        :from :todos
+                        ;:where [:= :role "admin"]
+                        ;:order-by [:name :asc]
+                        }))
 
   (sql/query (db-connection) ["select * from todos"])
 

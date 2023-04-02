@@ -14,6 +14,8 @@
                  [org.xerial/sqlite-jdbc "3.39.3.0"]
                  [com.layerware/hugsql "0.5.3"]
                  [org.clojure/core.async "1.6.673"]
+                 [com.github.seancorfield/honeysql "2.4.1011"]
+                 [toucan "1.18.0"]
                  ]
 
   :plugins [[lein-environ "1.1.0"]
