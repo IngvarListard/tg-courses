@@ -1,7 +1,7 @@
 (ns new-todo-bot.db.conn
-  (:require [clojure.java.jdbc :as sql]
+  (:require [next.jdbc :as sql]
             [honey.sql :as hsql]
-            [toucan.db :as db])
+            [toucan.db :as -db])
   (:import (com.mchange.v2.c3p0 ComboPooledDataSource)))
 
 (def db-spec {:classname "org.sqlite.JDBC"
@@ -27,10 +27,16 @@
 
 (defn db-connection [] @pooled-db)
 
-(db/set-default-db-connection! (db-connection))
+(-db/set-default-db-connection! (db-connection))
+
+(defn db
+  ([action data-map] (db action data-map {}))
+  ([action data-map opts]
+   (let [jdbc-func (resolve (symbol (str "next.jdbc/" (name action))))
+         raw-sql (hsql/format data-map)]
+     (jdbc-func (db-connection) raw-sql opts))))
 
 (comment
-
   (sql/format
     {:select [:*]
      :from :todos

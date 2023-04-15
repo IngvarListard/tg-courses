@@ -1,0 +1,57 @@
+entity users {
+    * id: int (primary key)
+    --
+    first_name: string
+    last_name: string
+    nickname: string
+    telegram_id: string
+    created_at: date
+}
+
+entity courses {
+    * id: int (primary key)
+    --
+    name: string
+    display_name: string
+    author: string
+    source: string
+    source_url: string
+    created_at: date
+}
+
+entity course_elements {
+    * id: int (primary key)
+    --
+    course_id: string
+    parent: int (foreign key на таблицу course_element)
+    name: text
+    display_name: text
+    created_at: date
+    --
+    * course_id: int (foreign key на таблицу "courses")
+}
+
+entity user_progress {
+    * id: int (primary key)
+    --
+    user_id: int
+    created_at: date
+    done_elements: text
+    --
+    * user_id: int (foreign key на таблицу "users")
+    * course_id: int (foreign key на таблицу "courses")
+    * course_element_id: int (foreign key на таблицу "course_elements")
+}
+
+entity documents {
+    * id: int (primary key)
+    --
+    name: text
+    display_name: text
+    tg_file_id: int
+    url: text
+    --
+    * course_id: int (foreign key на таблицу "courses")
+    * course_element_id: int (foreign key на таблицу "course_elements")
+}
+@enduml

@@ -1,8 +1,6 @@
-(ns new-todo-bot.db.models
-  (:require [toucan.models :refer [defmodel, IModel]]
-            [toucan.db :as db]
-            [new-todo-bot.db.conn :refer [db-connection]]))
-
+(ns new-todo-bot.db.funcs.users
+  (:require [toucan.db :as db]
+            [toucan.models :refer [defmodel, IModel]]))
 
 (defn get-by
   "Function that helps get records from DB for any model"
@@ -15,23 +13,16 @@
                  (into [model] fields))]
      (apply db/select model (mapcat seq params)))))
 
+(defmodel User :users IModel)
+
 (defn ensure-user-exists! [user]
   (let [uid (:id user)
         new-user (-> user
                      (select-keys [:first_name :last_name :username])
                      (assoc :telegram_id uid))]
     (if (and (some? uid) (db/exists? 'User {:telegram_id uid}))
-         uid
-         (:id (db/insert! 'User new-user)))))
-(defn insert!
-  [model obj]
-  )
-
-(defmodel Todo :todos IModel)
-
-(def get-todos-by (partial get-by 'Todo))
-
-(defmodel User :users IModel)
+      uid
+      (:id (db/insert! 'User new-user)))))
 
 (def get-users-by (partial get-by 'User))
 
@@ -48,9 +39,4 @@
 
 (def get-chats-by (partial get-by 'Chat))
 
-(comment
-  (add-todo (db-connection) {:description "ok" :status "ok"})
-  (todo-by-id (db-connection) {:id 2})
-  (todos-by-ids-specify-cols (db-connection) {:ids [1 2] :cols ["id" "status"]})
-  ()
-  )
+
