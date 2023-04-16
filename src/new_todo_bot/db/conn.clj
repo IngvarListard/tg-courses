@@ -1,7 +1,8 @@
 (ns new-todo-bot.db.conn
   (:require [next.jdbc :as sql]
             [honey.sql :as hsql]
-            [toucan.db :as -db])
+            [toucan.db :as -db]
+            [next.jdbc.result-set :as rs])
   (:import (com.mchange.v2.c3p0 ComboPooledDataSource)))
 
 (def db-spec {:classname "org.sqlite.JDBC"
@@ -29,12 +30,16 @@
 
 (-db/set-default-db-connection! (db-connection))
 
+;; Установка по-умолчанию чтобы nextjs не возвращал префиксы
+(def ds-opts (sql/with-options (db-connection) {:builder-fn rs/as-unqualified-lower-maps}))
+
 (defn db
+  "Общая функция для выполнения запросов к БД"
   ([action data-map] (db action data-map {}))
   ([action data-map opts]
    (let [jdbc-func (resolve (symbol (str "next.jdbc/" (name action))))
          raw-sql (hsql/format data-map)]
-     (jdbc-func (db-connection) raw-sql opts))))
+     (jdbc-func ds-opts raw-sql opts))))
 
 (comment
   (sql/format
@@ -43,6 +48,7 @@
      ;:where [:= :role "admin"]
      ;:order-by [:name :asc]
      })
+
   (sql/query (db-connection) (hsql/format
                        {:select [:*]
                         :from :todos
@@ -51,5 +57,4 @@
                         }))
 
   (sql/query (db-connection) ["select * from todos"])
-
   )

@@ -5,18 +5,21 @@
             [clojure.string :as s]
             [ring.util.codec :refer [form-encode form-decode]]
             [clojure.walk :refer [keywordize-keys]]
-            [new-todo-bot.db.funcs.user-progress :refer [create-user-course!]]
-            [new-todo-bot.db.funcs.common :refer [get-by]]
-            [new-todo-bot.db.funcs.users :refer [ensure-user-exists! ensure-chat-exists!]]
-            [morse.api :as t]))
+            [new-todo-bot.db.helpers.user-progress :refer [create-user-course!]]
+            [new-todo-bot.db.helpers.common :refer [get-by]]
+            [new-todo-bot.db.helpers.users :refer [ensure-user-exists! ensure-chat-exists!]]
+            [morse.api :as t]
+            [new-todo-bot.db.helpers.constants :as const]
+            [new-todo-bot.courses.keyboards :refer [build-node-buttons build-course-kb]]
+            [new-todo-bot.db.helpers.documents :refer [TDocuments]]))
 
-(def token "")
+(def token "6022297989:AAFsZ9UT34wg_8fcsIdAThxZ1aebvdHDRNQ")
 
 ; TODO: пагинация
 (defn list-
   [{chat :chat}]
   (let [courses (take 20 (c/get-courses-list))
-        buttons (map #(kb/new-button (:display_name %) (form-encode {:url "get_course" :id (:id %)})) courses)
+        buttons (build-node-buttons courses :display_name :id "get_course")
         lines (map kb/new-line buttons)]
     (println lines (:id chat))
     (ts/send-keyboard token (:id chat) "Список курсов" lines)))
@@ -48,11 +51,45 @@
                   "Описание: " (:description course) "\n\n"
                   structure)
         start-course-button (kb/single-button-kb "Начать" (form-encode {:url "start_course" :id id}))]
-    (ts/send-keyboard token (:id chat) text start-course-button)) {:parse_mode "Markdown"})
+    (ts/send-keyboard token (:id chat) text start-course-button)))
 
+;; TODO пагинация
 (defn start-course
-  [{:keys [] {:keys [chat from]} :message} {id :id}]
-  (let [user (first (get-by [:users :id] {:telegram_id (:id chat)}))]
-    (println "imhere")
-    (create-user-course! id (:users/id user))))
+  [{:keys [] {:keys [chat]} :message} {id :id}]
+  (let [user (first (get-by [:users :id] {:telegram_id (:id chat)}))
+        lines (build-course-kb :course-id id :parent-id nil)
+        text "Выберите элемент курса:\n\n"]
+    (create-user-course! id (:id user))
+    (ts/send-keyboard token (:id chat) text lines)))
+
+(defn get-item [{:keys [] {:keys [chat]} :message} {id :id type- :type}]
+  (condp = type-
+    const/document-type (->> (get-by TDocuments {:id id})
+                            first
+                            :tg_file_id
+                             (t/send-document
+                               token
+                               (:id chat)))
+    const/element-type (ts/send-keyboard
+                         token
+                         (:id chat)
+                         "Список курсов"
+                         (build-course-kb :parent-id id))))
+
+(comment
+  (start-course {:message {:chat {:id 37521589}}} {:id 1})
+  (:tg_file_id (first (get-by TDocuments {:id 1})))
+
+  (get-item {:message {:chat {:id 37521589}}} {:id 1 :type const/element-type})
+  (case "documents"
+    const/document-type (-> (get-by TDocuments {:telegram_id id})
+                            first
+                            (t/send-document
+                              token
+                              (:id chat)))
+    const/element-type (ts/send-keyboard
+                         token
+                         (:id chat)
+                         "Список курсов"
+                         (build-course-kb :parent-id id))))
 

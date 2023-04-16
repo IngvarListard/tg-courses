@@ -1,7 +1,7 @@
 (ns new-todo-bot.courses.controllers
-  (:require [new-todo-bot.db.funcs.course-elements :refer [CourseElements]]
-            [new-todo-bot.db.funcs.courses :refer [Courses]]
-            [new-todo-bot.db.funcs.documents :refer [Documents]]
+  (:require [new-todo-bot.db.helpers.course-elements :refer [CourseElements]]
+            [new-todo-bot.db.helpers.courses :refer [Courses]]
+            [new-todo-bot.db.helpers.documents :refer [Documents]]
             [toucan.db :as db]
             [clojure.string :as s]
             [new-todo-bot.db.conn :refer [db]]))

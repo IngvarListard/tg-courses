@@ -1,7 +1,7 @@
 (ns new-todo-bot.telegram.senders
   (:require [clj-http.client :as http]))
 
-(def base-url "https://api.telegram.org/bot")
+(def ^:const base-url "https://api.telegram.org/bot")
 
 (defn send-message
   [token message]

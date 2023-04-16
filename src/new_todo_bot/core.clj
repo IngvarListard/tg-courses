@@ -6,7 +6,7 @@
             [new-todo-bot.courses.views :as views])
   (:gen-class))
 
-(def token "")
+(def token "6022297989:AAFsZ9UT34wg_8fcsIdAThxZ1aebvdHDRNQ")
 
 ;(defn command-fn [name handler]
 ;  (fn [update]
@@ -25,8 +25,11 @@
   (h/callback-fn
     (views/defcallback
       :get_course views/get-course
-      :start_course views/start-course)))
+      :start_course views/start-course
+      :get_item views/get-item)))
 
+
+(defonce channel (p/start token handler))
 
 (defn -main
   [& _]
@@ -35,7 +38,15 @@
     (System/exit 1))
 
   (println "Starting the new-todo-bot")
-  ;(def channel (p/start token handler))
 
   (<!! (p/start token handler))
   )
+
+(defn restart-app
+  []
+  (p/stop channel)
+  (def channel (p/start token handler)))
+
+
+(comment
+  (restart-app))

@@ -1,7 +1,8 @@
-(ns new-todo-bot.db.funcs.user-progress
+(ns new-todo-bot.db.helpers.user-progress
   (:require [toucan.models :refer [defmodel, IModel]]
             [new-todo-bot.db.conn :refer [db]]
-            [new-todo-bot.db.funcs.common :refer [get-by insert-into!]]))
+            [new-todo-bot.db.helpers.common :refer [get-by insert-into!]]
+            [new-todo-bot.db.helpers.constants :as const]))
 
 (defmodel UserProgress :user_progress IModel)
 
@@ -46,8 +47,8 @@
              :from :user_progress
              :left-join [:course_elements [:and
                                            [:= :user_progress.element_id :course_elements.id]
-                                           [:= :user_progress.element_type "course_element"]]
+                                           [:= :user_progress.element_type const/element-type]]
                          :documents [:and
                                      [:= :user_progress.element_id :documents.id]
-                                     [:= :user_progress.element_type "document"]]]
+                                     [:= :user_progress.element_type const/document-type]]]
              :where [:= :user_progress.user_id user-id]}))

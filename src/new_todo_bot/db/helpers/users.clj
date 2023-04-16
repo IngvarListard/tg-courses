@@ -1,4 +1,4 @@
-(ns new-todo-bot.db.funcs.users
+(ns new-todo-bot.db.helpers.users
   (:require [toucan.db :as db]
             [toucan.models :refer [defmodel, IModel]]))
 
@@ -15,7 +15,9 @@
 
 (defmodel User :users IModel)
 
-(defn ensure-user-exists! [user]
+(defn ensure-user-exists!
+  "Проверить что пользователь существует либо создать его"
+  [user]
   (let [uid (:id user)
         new-user (-> user
                      (select-keys [:first_name :last_name :username])
@@ -24,11 +26,11 @@
       uid
       (:id (db/insert! 'User new-user)))))
 
-(def get-users-by (partial get-by 'User))
-
 (defmodel Chat :chats IModel)
 
-(defn ensure-chat-exists! [chat]
+(defn ensure-chat-exists!
+  "Проверить что пользователь существует либо создать его"
+  [chat]
   (let [chat-id (:id chat)
         new-chat (-> chat
                      (select-keys [:type])
@@ -36,7 +38,3 @@
     (if (and (some? chat-id) (db/exists? 'Chat {:telegram_id chat-id}))
       chat-id
       (:id (db/insert! 'Chat new-chat)))))
-
-(def get-chats-by (partial get-by 'Chat))
-
-
