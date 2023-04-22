@@ -2,13 +2,23 @@
   (:require [next.jdbc :as sql]
             [honey.sql :as hsql]
             [toucan.db :as -db]
-            [next.jdbc.result-set :as rs])
+            [next.jdbc.result-set :as rs]
+            [environ.core :refer [env]])
   (:import (com.mchange.v2.c3p0 ComboPooledDataSource)))
 
-(def db-spec {:classname "org.sqlite.JDBC"
-              :subprotocol "sqlite"
-              :subname "resources/db/db.sqlite3"
-              :create true})
+(let [host (env :postgres-host)
+      port (env :postgres-port)
+      user (env :postgres-user)
+      password (env :postgres-password)
+      database (env :postgres-database)]
+  (def db-spec {
+                :classname "org.postgresql.Driver"
+                :subprotocol "postgresql"
+                :subname (format "//%s:%s/%s" host port database)
+                :user user
+                :password password
+                :create true}))
+
 
 ;; connections pooling
 (defn pool
@@ -16,8 +26,8 @@
   (let [cpds (doto (ComboPooledDataSource.)
                (.setDriverClass (:classname spec))
                (.setJdbcUrl (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
-               ;;(.setUser (:user spec))
-               ;;(.setPassword (:password spec))
+               (.setUser (:user spec))
+               (.setPassword (:password spec))
                ;; expire excess connections after 30 minutes of inactivity:
                (.setMaxIdleTimeExcessConnections (* 30 60))
                ;; expire connections after 3 hours of inactivity:

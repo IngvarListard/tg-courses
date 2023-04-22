@@ -1,8 +1,8 @@
 (ns cli.load-course
   (:require [clojure.java.io :as io]
-            [new-todo-bot.db.models.course-elements :refer [CourseElements]]
-            [new-todo-bot.db.models.courses :refer [Courses]]
-            [new-todo-bot.db.models.documents :refer [Documents]]
+            [new-todo-bot.db.helpers.course-elements :refer [CourseElements]]
+            [new-todo-bot.db.helpers.courses :refer [Courses]]
+            [new-todo-bot.db.helpers.documents :refer [Documents]]
             [toucan.db :as db]
             [morse.api :as api]
             [new-todo-bot.core :refer [token]]
@@ -15,8 +15,9 @@
 
 (def resources (list-directory resources-dir))
 
-(defn join-path [base to]
+(defn join-path
   "Объединение путей независимо от ОС"
+  [base to]
   (-> (io/file base)
       (.toPath)
       (.resolve to)
@@ -63,10 +64,9 @@
              tg-file-id (get-in resp [:result :document :file_id])]
          (insert-document! file-name course-id parent-id tg-file-id))))))
 
-
 (defn -main
   [& args]
-  (let [course-id (insert-course! "fist test course")]
+  (let [course-id (insert-course! "Effortless English - New method learning english")]
     (db/transaction
       (load-course resources-dir course-id))))
 

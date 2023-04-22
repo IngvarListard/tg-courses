@@ -22,6 +22,7 @@
         new-user (-> user
                      (select-keys [:first_name :last_name :username])
                      (assoc :telegram_id uid))]
+    (println uid)
     (if (and (some? uid) (db/exists? 'User {:telegram_id uid}))
       uid
       (:id (db/insert! 'User new-user)))))

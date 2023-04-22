@@ -3,21 +3,11 @@
             [clojure.string :as str]
             [morse.handlers :as h]
             [morse.polling :as p]
-            [new-todo-bot.courses.views :as views])
+            [new-todo-bot.courses.views :as views]
+            [environ.core :refer [env]])
   (:gen-class))
 
-(def token "6022297989:AAFsZ9UT34wg_8fcsIdAThxZ1aebvdHDRNQ")
-
-;(defn command-fn [name handler]
-;  (fn [update]
-;    (let [update-command (-> update
-;                             (get-in [:message :text])
-;                             (str/split #"_")
-;                             (first)
-;                             (println)
-;                             ((fn [cmd] (assoc-in update [:message :text] cmd))))]
-;      (if (h/command? update-command name)
-;        (handler (:message update-command))))))
+(def token (env :telegram-token))
 
 (h/defhandler handler
   (h/command-fn "list" views/list-)
@@ -26,8 +16,8 @@
     (views/defcallback
       :get_course views/get-course
       :start_course views/start-course
-      :get_item views/get-item)))
-
+      :get_item views/get-item))
+  (h/message message (println "Intercepted message:" message)))
 
 (defonce channel (p/start token handler))
 
@@ -39,14 +29,12 @@
 
   (println "Starting the new-todo-bot")
 
-  (<!! (p/start token handler))
-  )
+  (<!! (p/start token handler)))
 
 (defn restart-app
   []
   (p/stop channel)
   (def channel (p/start token handler)))
-
 
 (comment
   (restart-app))
