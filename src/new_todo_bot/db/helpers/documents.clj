@@ -3,4 +3,6 @@
 
 (defmodel Documents :documents IModel)
 
-(defonce TDocuments :documents)
+(def ^:const TDocuments :documents)
+
+(def ^:const document-types {:file "file" :audio "audio"})

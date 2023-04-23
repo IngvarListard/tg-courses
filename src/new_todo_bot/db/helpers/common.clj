@@ -25,6 +25,29 @@
           :where where}
          {:return-keys true}))))
 
+(defn build-where-condition
+  [condition]
+  (let [where-cond (map #(into [:=] %1) condition)
+        where (if (<= (count condition) 1)
+                where-cond
+                (into [:and] where-cond))]
+    where))
+(comment
+  (build-where-condition {:id 1})
+  )
+(defn update-by!
+  [table-fields condition object]
+  (println "condition" condition)
+  (let [multi? (if (vector? object) true false)
+        t&f (transform-table-fields table-fields)
+        where (build-where-condition condition)
+        sql-map {:update (:table t&f)
+                 :set object
+                 :where where
+                 :returning (:fields t&f)}]
+    (println sql-map)
+    (db :execute! sql-map {:multi-rs multi?})))
+
 (defn insert-into!
   "Общая функция для вставки записи в таблицу БД"
   [table-fields object]
@@ -37,6 +60,5 @@
                  :columns (keys (first object))
                  :values (map #(vals %1) object)
                  :returning (:fields t&f)}]
-    (println  sql-map)
     (db :execute! sql-map {:multi-rs multi?})))
 

@@ -27,7 +27,7 @@
                                :element-id element-id
                                :element-type type-})]
     (if user-progress
-      (db :execute
+      (db :execute!
           {:update :user-progress
            :set {:status status}
            :where [:= :id (:id (first user-progress))]})

@@ -6,9 +6,10 @@
             [clojure.string :as s]
             [new-todo-bot.db.conn :refer [db]]))
 
-(def icons
+(def ^:const icons
   {"file" "\uD83D\uDCC4 "
-   "folder" "\uD83D\uDCC1 "})
+   "folder" "\uD83D\uDCC1 "
+   "audio" "\uD83D\uDD0A "})
 
 (defn get-courses-list
   "Весь список курсов"
@@ -28,22 +29,8 @@
         children (if leaf?
                    []
                    (get elements head-id))
-        enriched-children (map #(build-tree % elements) children)
-        ]
-    (assoc head :children enriched-children)
-    ))
-
-(comment
-  (let [a {nil [{:id 1}]
-           1 [{:id 2}
-              {:id 3}]
-           2 [{:id 4}
-              {:id 5}]
-           }]
-    (build-tree (first (get grouped nil)) grouped))
-
-
-  )
+        enriched-children (map #(build-tree % elements) children)]
+    (assoc head :children enriched-children)))
 
 (defn build-course-structure
   "Построение дерева курса. На выходе вложенная мапа курса с
@@ -61,19 +48,6 @@
         grouped (group-by :parent_id elements)
         tree (build-tree (first (get grouped nil)) grouped)]
     tree))
-
-(comment
-  (def docs (db/select
-              ['Documents :id :course_element_id :display_name :type]
-              :course_id 1))
-  (def els (db/select
-             ['CourseElements :id :parent_id :display_name]
-             :course_id 1))
-  (def dd (map #(assoc % :parent_id (:course_element_id %)) docs))
-  (def aa (concat dd els))
-
-  (def grouped (group-by :parent_id aa))
-  )
 
 (defn render-course-structure
   "Отрисовка структуры курса в текстовом формате"

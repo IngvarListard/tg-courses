@@ -5,7 +5,7 @@
 
 (defmodel CourseElements :course_elements IModel)
 
-(defonce TCourseElements :course_elements)
+(def ^:const TCourseElements :course_elements)
 
 (defn get-course-elements
   "Получить элементы и документы привязанные к курсу"
