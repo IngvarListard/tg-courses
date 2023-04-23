@@ -10,13 +10,16 @@
 (defn get-course-elements
   "Получить элементы и документы привязанные к курсу"
   [& {:keys [course-id parent-id] :as args}]
-  (println args)
   (let [prepare-cond #(reduce
                         (fn [init [k v]]
                           (if (contains? args v)
                             (into init {k (v args)})
                             init))
                         {} %)
-        elements (get-by TCourseElements (prepare-cond {:parent_id :parent-id :course_id :course-id}))
-        documents (get-by TDocuments (prepare-cond {:course_element_id :parent-id :course_id :course-id}))]
+        elements (get-by TCourseElements
+                         (prepare-cond {:parent_id :parent-id :course_id :course-id})
+                         :order-by [:sort])
+        documents (get-by TDocuments
+                          (prepare-cond {:course_element_id :parent-id :course_id :course-id})
+                          :order-by [:sort])]
     [elements documents]))

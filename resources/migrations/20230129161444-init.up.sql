@@ -25,6 +25,7 @@ CREATE TABLE course_elements (
   name VARCHAR,
   display_name VARCHAR,
   created_at DATE,
+  sort DOUBLE PRECISION,
   FOREIGN KEY (course_id) REFERENCES courses(id),
   FOREIGN KEY (parent_id) REFERENCES course_elements(id)
 );
@@ -61,6 +62,7 @@ CREATE TABLE documents (
   course_id INTEGER,
   course_element_id INTEGER,
   type VARCHAR,
+  sort DOUBLE PRECISION,
   FOREIGN KEY (course_id) REFERENCES courses(id),
   FOREIGN KEY (course_element_id) REFERENCES course_elements(id)
 );

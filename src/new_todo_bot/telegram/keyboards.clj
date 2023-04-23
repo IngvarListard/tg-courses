@@ -9,7 +9,7 @@
 
 (defn new-line
   [& buttons]
-  buttons)
+  (vec buttons))
 
 (defn new
   [& lines]

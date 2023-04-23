@@ -12,18 +12,17 @@
 
 (defn get-by
   "Общая фунция для получения таблиц из БД"
-  ([table-fields] (get-by table-fields {}))
-  ([table-fields condition]
+  ([table-fields condition & {:keys [order-by]}]
    (let [t&f (transform-table-fields table-fields)
          where-cond (map #(into [:=] %1) condition)
          where (if (<= (count condition) 1)
                  where-cond
-                 (into [:and] where-cond))]
-     (db :execute!
-         {:select (:fields t&f)
-          :from (:table t&f)
-          :where where}
-         {:return-keys true}))))
+                 (into [:and] where-cond))
+         sql-map (merge {:select (:fields t&f)
+                         :from (:table t&f)
+                         :where where}
+                        (when order-by {:order-by order-by}))]
+     (db :execute! sql-map {:return-keys true}))))
 
 (defn build-where-condition
   [condition]

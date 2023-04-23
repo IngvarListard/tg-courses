@@ -7,15 +7,16 @@
 (defn build-node-buttons
   ([elements get-name get-id callback-url] (build-node-buttons elements get-name get-id callback-url {}))
   ([elements get-name get-id callback-url opts]
-   (map #(kb/new-button
-           (get-name %)
-           (form-encode (into {:url callback-url :id (get-id %)} opts)))
-        elements)))
+   (letfn [(get-icon [el] (get  const/icons (get el :type "folder")))]
+     (vec (map #(kb/new-button
+                  (str (get-icon %) (get-name %))
+                  (form-encode (into {:url callback-url :id (get-id %)} opts)))
+               elements)))))
 
 (defn build-course-kb
   [& {:keys [course-id parent-id] :as args}]
   (let [[elements documents] (get-course-elements args)
-        elements-buttons (build-node-buttons elements :name :id "get_item" {:type const/element-type})
-        documents-buttons (build-node-buttons documents :name :id "get_item" {:type const/document-type})
-        lines (map kb/new-line (into elements-buttons documents-buttons))]
+        elements-buttons (build-node-buttons elements :display_name :id "get_item" {:type const/element-type})
+        documents-buttons (build-node-buttons documents :display_name :id "get_item" {:type const/document-type})
+        lines (map kb/new-line (concat elements-buttons documents-buttons))]
     lines))

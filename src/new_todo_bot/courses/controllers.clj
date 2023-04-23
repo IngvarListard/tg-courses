@@ -1,10 +1,12 @@
 (ns new-todo-bot.courses.controllers
-  (:require [new-todo-bot.db.helpers.course-elements :refer [CourseElements]]
+  (:require [clojure.string :as s]
+            [new-todo-bot.db.helpers.course-elements :refer [CourseElements]]
             [new-todo-bot.db.helpers.courses :refer [Courses]]
             [new-todo-bot.db.helpers.documents :refer [Documents]]
             [toucan.db :as db]
-            [clojure.string :as s]
-            [new-todo-bot.db.conn :refer [db]]))
+            [new-todo-bot.db.helpers.common :refer [get-by]]
+            [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
+            [new-todo-bot.db.helpers.documents :refer [TDocuments]]))
 
 (def ^:const icons
   {"file" "\uD83D\uDCC4 "
@@ -36,12 +38,12 @@
   "Построение дерева курса. На выходе вложенная мапа курса с
   детьми"
   [course-id]
-  (let [elements (db/select
-                   ['CourseElements :id :parent_id :display_name]
-                   :course_id course-id)
-        documents (db/select
-                    ['Documents :id :course_element_id :display_name :type]
-                    :course_id course-id)
+  (let [elements (get-by [TCourseElements :id :parent_id :display_name]
+                         {:course_id course-id}
+                         :order-by [:sort])
+        documents (get-by [TDocuments :id :course_element_id :display_name :type]
+                          {:course_id course-id}
+                          :order-by [:sort])
         documents (map #(assoc % :parent_id (:course_element_id %)) documents)
         documents (map #(assoc % :parent_id (:course_element_id %) :leaf true) documents)
         elements (concat elements documents)
