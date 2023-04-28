@@ -8,7 +8,9 @@
 (def ^:const TCourseElements :course_elements)
 
 (defn get-course-elements
-  "Получить элементы и документы привязанные к курсу"
+  "Получить элементы и документы привязанные к курсу.
+  Если course-id и/или parent-id указаны, то фильтрует по
+  этим значениям. Значения могут быть nil"
   [& {:keys [course-id parent-id] :as args}]
   (let [prepare-cond #(reduce
                         (fn [init [k v]]

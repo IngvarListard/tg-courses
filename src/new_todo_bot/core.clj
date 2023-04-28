@@ -16,7 +16,9 @@
     (views/defcallback
       :get_course views/get-course
       :start_course views/start-course
-      :get_item views/get-item))
+      :get_item views/get-item
+      :get_dir_above views/get-dir-above
+      :get_course_files views/get-course-files))
   (h/message message (println "Intercepted message:" message)))
 
 (defonce channel (p/start token handler))

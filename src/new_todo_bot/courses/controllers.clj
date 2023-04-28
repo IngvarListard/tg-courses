@@ -1,12 +1,15 @@
 (ns new-todo-bot.courses.controllers
   (:require [clojure.string :as s]
-            [new-todo-bot.db.helpers.course-elements :refer [CourseElements]]
-            [new-todo-bot.db.helpers.courses :refer [Courses]]
-            [new-todo-bot.db.helpers.documents :refer [Documents]]
-            [toucan.db :as db]
+            [new-todo-bot.common.utils :as u]
             [new-todo-bot.db.helpers.common :refer [get-by]]
+            [new-todo-bot.db.helpers.constants :as const]
             [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
-            [new-todo-bot.db.helpers.documents :refer [TDocuments]]))
+            [new-todo-bot.db.helpers.courses :refer [Courses]]
+            [new-todo-bot.telegram.senders :as ts]
+            [morse.api :as t]
+            [new-todo-bot.db.helpers.documents :refer [TDocuments]]
+            [toucan.db :as db]
+            [new-todo-bot.courses.keyboards :refer [build-course-kb]]))
 
 (def ^:const icons
   {"file" "\uD83D\uDCC4 "
@@ -48,7 +51,7 @@
         documents (map #(assoc % :parent_id (:course_element_id %) :leaf true) documents)
         elements (concat elements documents)
         grouped (group-by :parent_id elements)
-        tree (build-tree (first (get grouped nil)) grouped)]
+        tree (map (fn [el] (build-tree el grouped)) (get grouped nil))]
     tree))
 
 (defn render-course-structure
@@ -62,3 +65,18 @@
          ident (if (s/blank? ident) "└ " (str "     " ident))
          new-lines (map #(render-course-structure % ident) (:children root-))]
      (flatten (concat new-line new-lines)))))
+
+(defn get-item-
+  [token chat-id element-id type-]
+  (condp = type-
+    const/document-type (->> (get-by TDocuments {:id (u/parse-int element-id)})
+                             first
+                             :tg_file_id
+                             (t/send-document
+                               token
+                               chat-id))
+    const/element-type (ts/send-keyboard
+                         token
+                         chat-id
+                         "Список курсов"
+                         (build-course-kb :parent-id (u/parse-int element-id)))))
