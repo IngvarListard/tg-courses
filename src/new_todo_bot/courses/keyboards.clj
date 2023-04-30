@@ -78,8 +78,7 @@
   [parent-id course-id]
   (when (or parent-id course-id)
     (let [callback (encode-callback-payload "get_course_files" {:parent-id parent-id :course-id course-id})]
-      (kb/new-button "⬇️ Получить все файлы курса", callback))))
-
+      (kb/new-button "⬇️ Получить все файлы текущей директории", callback))))
 
 (comment
   (build-course-kb :parent-id 13 :page-number 2)

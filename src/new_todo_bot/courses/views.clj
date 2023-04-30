@@ -19,7 +19,6 @@
 
 (def token (env :telegram-token))
 
-; TODO: пагинация
 (defn list-
   "Отправляет пользователю список доступных курсов"
   [{chat :chat}]
@@ -31,7 +30,7 @@
   [{chat :chat user :from}]
   (ensure-user-exists! user)
   (ensure-chat-exists! chat)
-  (t/send-text token (:id chat) "Well cum"))
+  (t/send-text token (:id chat) "Для вывода списка курсов напишите команду /list"))
 
 (defn defcallback
   "Регистрация колбэков и предобработка сообщения. В будущем
@@ -64,7 +63,6 @@
         start-course-button (kb/single-button-kb "Начать" (form-encode {:url "start_course" :id id}))]
     (ts/send-keyboard token (:id chat) (subs text 0 (min (count text) 4000)) start-course-button)))
 
-;; TODO пагинация
 (defn start-course
   "Создает для пользователя запись прогресса, возвращает
   содержание первой директории курса."
@@ -74,48 +72,49 @@
     (create-user-course! id (:id user))
     (c/get-item- token (:id chat) id const/course-type)))
 
-(comment
-
-  (ts/send-keyboard token 37521589 "asdf" a)
-  (new-dir-up-button 10)
-  )
+(def edit-keyboard
+  (fn
+    [message-id token chat-id _ keyboard]
+    (ts/edit-keyboard token chat-id message-id keyboard)))
 
 (defn get-item
   "Отправляет элемент или содержание директории"
-  [{:keys [] {:keys [chat]} :message} {:keys [id type page-number page-size]}]
-  (c/get-item- token (:id chat) id type :page-number page-number :page-size page-size))
+  [{:keys [] {:keys [chat message_id]} :message} {:keys [id type page-number page-size]}]
+  (let [send-keyboard (partial edit-keyboard message_id)]
+    (c/get-item-
+      token
+      (:id chat)
+      id
+      type
+      :page-number page-number
+      :page-size page-size
+      :send-keyboard send-keyboard)))
 
 (defn get-dir-above
   "Отправить содержание родительской директории"
-  [{:keys [] {:keys [chat]} :message} {id :id _ :type}]
-  (if-let [element (first (get-by TCourseElements {:id (u/parse-int id)}))]
-    (if-let [parent-id (:parent_id element)]
-      (c/get-item- token (:id chat) (u/parse-int parent-id) const/element-type)
-      (let [course-id (:course_id element)]
-        (c/get-item- token (:id chat) course-id const/course-type)))
-    (t/send-text token (:id chat) "Элемент не найден")))
+  [{:keys [] {:keys [chat message_id]} :message} {id :id _ :type}]
+  (let [send-keyboard (partial edit-keyboard message_id)]
+    (if-let [element (first (get-by TCourseElements {:id (u/parse-int id)}))]
+      (if-let [parent-id (:parent_id element)]
+        (c/get-item- token (:id chat) (u/parse-int parent-id) const/element-type :send-keyboard send-keyboard)
+        (let [course-id (:course_id element)]
+          (c/get-item- token (:id chat) course-id const/course-type :send-keyboard send-keyboard)))
+      (t/send-text token (:id chat) "Элемент не найден"))))
 
 (defn get-course-files
   "Отправка нескольких файлов курса"
   [{:keys [] {:keys [chat]} :message} {:keys [parent-id course-id]}]
   (let [[parent-id course-id] [(u/parse-int parent-id) (u/parse-int course-id)]
         where-cond (merge {:course-element-id parent-id}
-                            (when course-id {:course-id course-id}))
+                          (when course-id {:course-id course-id}))
         documents (get-by TDocuments where-cond)]
     (go (doseq [doc documents]
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))
 
 (comment
-  (get-course-files {:message {:chat {:id 37521589}}}
-                    {:parent-id 56 :course-id ""})
-  (get-by TDocuments (merge {:course-element-id (u/parse-int 56)}
-                            (when (u/parse-int "")
-                              {:course-id (u/parse-int "")})))
-  (get-dir-above
-    {:message {:chat {:id 37521589}}} {:id 3 :type ""}))
-
-(comment
+  (ts/send-keyboard token 37521589 "asdf" a)
+  (new-dir-up-button 10)
   (build-course-kb :course-id 1 :parent-id 10)
   (start-course {:message {:chat {:id 37521589}}} {:id 1})
   (:tg_file_id (first (get-by TDocuments {:id 1})))
@@ -131,5 +130,12 @@
                          token
                          (:id chat)
                          "Список курсов"
-                         (build-course-kb :parent-id id))))
+                         (build-course-kb :parent-id id)))
+  (get-course-files {:message {:chat {:id 37521589}}}
+                    {:parent-id 56 :course-id ""})
+  (get-by TDocuments (merge {:course-element-id (u/parse-int 56)}
+                            (when (u/parse-int "")
+                              {:course-id (u/parse-int "")})))
+  (get-dir-above
+    {:message {:chat {:id 37521589}}} {:id 3 :type ""}))
 

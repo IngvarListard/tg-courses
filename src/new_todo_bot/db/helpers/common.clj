@@ -39,9 +39,11 @@
                 where-cond
                 (into [:and] where-cond))]
     where))
+
 (comment
   (build-where-condition {:id 1})
   )
+
 (defn update-by!
   [table-fields condition object]
   (println "condition" condition)
@@ -116,8 +118,7 @@
     [_]
     (if (<= page-number 1)
       nil
-      (dec page-number)))
-  )
+      (dec page-number))))
 
 (defn new-pager
   [page-number page-size get-data-func]

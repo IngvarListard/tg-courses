@@ -67,8 +67,9 @@
      (flatten (concat new-line new-lines)))))
 
 (defn get-item-
-  [token chat-id element-id type- & {:keys [page-number page-size]}]
-  (let [send-keyboard (partial ts/send-keyboard token chat-id "Список курсов")
+  [token chat-id element-id type- & {:keys [page-number page-size send-keyboard]
+                                     :or {send-keyboard ts/send-keyboard}}]
+  (let [send-keyboard (partial send-keyboard token chat-id "Список курсов")
         element-id (u/parse-int element-id)
         build-kb (partial build-course-kb :page-number (u/parse-int page-number) :page-size (u/parse-int page-size))]
     (condp = type-
