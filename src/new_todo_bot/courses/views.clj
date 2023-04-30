@@ -10,7 +10,7 @@
             [new-todo-bot.db.helpers.users :refer [ensure-user-exists! ensure-chat-exists!]]
             [morse.api :as t]
             [new-todo-bot.db.helpers.constants :as const]
-            [new-todo-bot.courses.keyboards :refer [build-node-buttons build-course-kb new-navigation-buttons]]
+            [new-todo-bot.courses.keyboards :refer [build-node-buttons build-course-kb new-dir-up-button]]
             [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
             [new-todo-bot.db.helpers.documents :refer [TDocuments]]
             [environ.core :refer [env]]
@@ -24,7 +24,7 @@
   "Отправляет пользователю список доступных курсов"
   [{chat :chat}]
   (let [courses (take 20 (c/get-courses-list))
-        buttons (build-node-buttons courses :display_name :id "get_course")]
+        buttons (build-node-buttons courses "get_course")]
     (ts/send-keyboard token (:id chat) "Список курсов" buttons)))
 
 (defn start
@@ -70,22 +70,20 @@
   содержание первой директории курса."
   [{:keys [] {:keys [chat]} :message} {id :id}]
   (let [id (Integer/parseInt id)
-        user (first (get-by [:users :id] {:telegram_id (:id chat)}))
-        lines (build-course-kb :course-id id :parent-id nil)
-        text "Выберите элемент курса:\n\n"]
+        user (first (get-by [:users :id] {:telegram_id (:id chat)}))]
     (create-user-course! id (:id user))
-    (ts/send-keyboard token (:id chat) text lines)))
+    (c/get-item- token (:id chat) id const/course-type)))
 
 (comment
 
   (ts/send-keyboard token 37521589 "asdf" a)
-  (new-navigation-buttons 10)
+  (new-dir-up-button 10)
   )
 
 (defn get-item
   "Отправляет элемент или содержание директории"
-  [{:keys [] {:keys [chat]} :message} {id :id type- :type}]
-  (c/get-item- token (:id chat) id type-))
+  [{:keys [] {:keys [chat]} :message} {:keys [id type page-number page-size]}]
+  (c/get-item- token (:id chat) id type :page-number page-number :page-size page-size))
 
 (defn get-dir-above
   "Отправить содержание родительской директории"
@@ -93,11 +91,8 @@
   (if-let [element (first (get-by TCourseElements {:id (u/parse-int id)}))]
     (if-let [parent-id (:parent_id element)]
       (c/get-item- token (:id chat) (u/parse-int parent-id) const/element-type)
-      (let [course-id (:course_id element)
-            _ (println "course id" id)
-            lines (build-course-kb :course-id course-id :parent-id nil)
-            text "Выберите курс"]
-        (ts/send-keyboard token (:id chat) text lines)))
+      (let [course-id (:course_id element)]
+        (c/get-item- token (:id chat) course-id const/course-type)))
     (t/send-text token (:id chat) "Элемент не найден")))
 
 (defn get-course-files

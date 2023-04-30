@@ -9,7 +9,7 @@
 
 (defn new-line
   [& buttons]
-  (vec buttons))
+  (vec (remove nil? buttons)))
 
 (defn new
   [& lines]

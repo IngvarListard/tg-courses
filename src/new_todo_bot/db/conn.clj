@@ -43,6 +43,7 @@
 ;; Установка по-умолчанию чтобы nextjs не возвращал префиксы
 (def ds-opts (sql/with-options (db-connection) {:builder-fn rs/as-unqualified-lower-maps}))
 
+;; TODO debug log all formatted queries
 (defn db
   "Общая функция для выполнения запросов к БД"
   ([action data-map] (db action data-map {}))
@@ -50,21 +51,3 @@
    (let [jdbc-func (resolve (symbol (str "next.jdbc/" (name action))))
          raw-sql (hsql/format data-map)]
      (jdbc-func ds-opts raw-sql opts))))
-
-(comment
-  (sql/format
-    {:select [:*]
-     :from :todos
-     ;:where [:= :role "admin"]
-     ;:order-by [:name :asc]
-     })
-
-  (sql/query (db-connection) (hsql/format
-                       {:select [:*]
-                        :from :todos
-                        ;:where [:= :role "admin"]
-                        ;:order-by [:name :asc]
-                        }))
-
-  (sql/query (db-connection) ["select * from todos"])
-  )

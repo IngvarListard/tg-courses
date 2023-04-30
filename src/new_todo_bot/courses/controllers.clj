@@ -67,16 +67,17 @@
      (flatten (concat new-line new-lines)))))
 
 (defn get-item-
-  [token chat-id element-id type-]
-  (condp = type-
-    const/document-type (->> (get-by TDocuments {:id (u/parse-int element-id)})
-                             first
-                             :tg_file_id
-                             (t/send-document
-                               token
-                               chat-id))
-    const/element-type (ts/send-keyboard
-                         token
-                         chat-id
-                         "Список курсов"
-                         (build-course-kb :parent-id (u/parse-int element-id)))))
+  [token chat-id element-id type- & {:keys [page-number page-size]}]
+  (let [send-keyboard (partial ts/send-keyboard token chat-id "Список курсов")
+        element-id (u/parse-int element-id)
+        build-kb (partial build-course-kb :page-number (u/parse-int page-number) :page-size (u/parse-int page-size))]
+    (condp = type-
+      const/document-type (->> (get-by TDocuments {:id element-id})
+                               first
+                               :tg_file_id
+                               (t/send-document
+                                 token
+                                 chat-id))
+      const/element-type (send-keyboard (build-kb :parent-id element-id))
+      const/course-type (send-keyboard (build-kb :course-id element-id :parent-id nil))
+      (t/send-text token chat-id (str "Не найден тип документа " type-)))))
