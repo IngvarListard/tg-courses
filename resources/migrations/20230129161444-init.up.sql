@@ -73,3 +73,12 @@ CREATE TABLE IF NOT EXISTS chats(
     type VARCHAR
 );
 --;;
+CREATE TABLE user_last_course (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  element_id INTEGER NOT NULL,
+  element_type VARCHAR NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  UNIQUE(user_id, element_id, element_type)
+);
+--;;

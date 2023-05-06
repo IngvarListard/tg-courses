@@ -202,5 +202,4 @@
 (comment
   (println resources)
   (def f (io/file "/Users/igorlisovcov/Downloads"))
-  (map #(join-path "/" (str %1)) (.list f))
-  )
+  (map #(join-path "/" (str %1)) (.list f)))

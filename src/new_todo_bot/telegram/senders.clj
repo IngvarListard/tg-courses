@@ -30,6 +30,13 @@
                        :reply_markup {:inline_keyboard keyboard}})]
     (send-message token message "/editMessageReplyMarkup")))
 
+(defn edit-text
+  [token chat-id message-id text]
+  (let [message (into {:chat_id chat-id
+                       :message_id message-id
+                       :text text})]
+    (send-message token message "/editMessageText")))
+
 (defn send-menu
   "Sends reply keyboard"
   ([token chat-id text keyboard] (send-menu token chat-id text keyboard {}))

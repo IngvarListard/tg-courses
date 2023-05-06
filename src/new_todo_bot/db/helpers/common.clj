@@ -21,7 +21,7 @@
 
 (defn get-by
   "Общая фунция для получения таблиц из БД"
-  ([table-fields condition & {:keys [order-by offset limit]}]
+  ([table-fields condition & {:keys [order-by offset limit join]}]
    (let [t&f (transform-table-fields table-fields)
          where (build-where-cond condition)
          sql-map (merge {:select (:fields t&f)
@@ -29,7 +29,8 @@
                          :where  where}
                         (when order-by {:order-by order-by})
                         (when offset {:offset offset})
-                        (when limit {:limit limit}))]
+                        (when limit {:limit limit})
+                        (when join {:join order-by}))]
      (db :execute! sql-map {:return-keys true}))))
 
 (defn build-where-condition

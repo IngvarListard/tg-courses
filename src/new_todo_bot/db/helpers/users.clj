@@ -15,6 +15,8 @@
 
 (defmodel User :users IModel)
 
+(def TUser :users)
+
 (defn ensure-user-exists!
   "Проверить что пользователь существует либо создать его"
   [user]

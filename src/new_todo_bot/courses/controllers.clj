@@ -4,17 +4,19 @@
             [new-todo-bot.db.helpers.common :refer [get-by]]
             [new-todo-bot.db.helpers.constants :as const]
             [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
-            [new-todo-bot.db.helpers.courses :refer [Courses]]
+            [new-todo-bot.db.helpers.courses :refer [Courses TCourses]]
             [new-todo-bot.telegram.senders :as ts]
             [morse.api :as t]
             [new-todo-bot.db.helpers.documents :refer [TDocuments]]
             [toucan.db :as db]
-            [new-todo-bot.courses.keyboards :refer [build-course-kb]]))
+            [new-todo-bot.courses.keyboards :refer [build-course-kb]]
+            [new-todo-bot.db.helpers.user-last-course :refer [update-user-last-course!]]
+            [new-todo-bot.db.helpers.users :refer [TUser]]))
 
 (def ^:const icons
-  {"file" "\uD83D\uDCC4 "
+  {"file"   "\uD83D\uDCC4 "
    "folder" "\uD83D\uDCC1 "
-   "audio" "\uD83D\uDD0A "})
+   "audio"  "\uD83D\uDD0A "})
 
 (defn get-courses-list
   "Весь список курсов"
@@ -68,17 +70,33 @@
 
 (defn get-item-
   [token chat-id element-id type- & {:keys [page-number page-size send-keyboard]
-                                     :or {send-keyboard ts/send-keyboard}}]
-  (let [send-keyboard (partial send-keyboard token chat-id "Список курсов")
+                                     :or   {send-keyboard ts/send-keyboard}}]
+  (let [send-keyboard (partial send-keyboard token chat-id)
         element-id (u/parse-int element-id)
-        build-kb (partial build-course-kb :page-number (u/parse-int page-number) :page-size (u/parse-int page-size))]
+        build-kb (partial build-course-kb :page-number (u/parse-int page-number) :page-size (u/parse-int page-size))
+        kb-text "Список курсов "]
     (condp = type-
       const/document-type (->> (get-by TDocuments {:id element-id})
                                first
                                :tg_file_id
-                               (t/send-document
-                                 token
-                                 chat-id))
-      const/element-type (send-keyboard (build-kb :parent-id element-id))
-      const/course-type (send-keyboard (build-kb :course-id element-id :parent-id nil))
+                               (t/send-document token chat-id))
+      const/element-type (let [text (->> (get-by [TCourseElements :display_name] {:id element-id})
+                                         first
+                                         :display_name
+                                         (str kb-text))]
+                           (send-keyboard text (build-kb :parent-id element-id)))
+      const/course-type (let [text (->> (get-by [TCourses :display_name] {:id element-id})
+                                        first
+                                        :display_name
+                                        (str kb-text))]
+                          (send-keyboard text (build-kb :course-id element-id :parent-id nil)))
       (t/send-text token chat-id (str "Не найден тип документа " type-)))))
+
+(defn get&save-item-for-user
+  [token chat-id element-id type- & {:keys [page-number page-size send-keyboard]
+                                     :as   kwargs}]
+  (let [user (get-by [TUser :id] {:telegram_id chat-id})
+        user-id (-> user first :id)
+        element-id* (u/parse-int element-id)]
+    (update-user-last-course! user-id element-id* type-)
+    (get-item- token chat-id element-id* type- kwargs)))

@@ -30,7 +30,6 @@
 
 (defn get-course-content
   [& {:keys [course-id parent-id offset limit return-count?] :as args}]
-  (println "get-course-content with args " args)
   (let [where (build-where-cond (select-keys args [:course-id :parent-id]))
         select (if return-count? [:%count.*] [:id :display_name :type :entity])
         sqlmap (merge {:select select
@@ -58,3 +57,13 @@
                       (when limit {:limit limit}))
         result (db :execute! sqlmap)]
     (if return-count? (first result) result)))
+
+(defn get-element-display-name
+  [element-id]
+  (let [element (db :execute! {:select [:display_name]
+                               :from   TCourseElements
+                               :where  [:= :id {:select [:parent-id]
+                                                :from   TCourseElements
+                                                :where  [:= :id element-id]}]})
+        display-name (-> element first :display_name)]
+    display-name))

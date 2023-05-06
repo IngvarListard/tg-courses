@@ -15,7 +15,8 @@
             [new-todo-bot.db.helpers.documents :refer [TDocuments]]
             [environ.core :refer [env]]
             [new-todo-bot.common.utils :as u]
-            [clojure.core.async :refer [<! timeout go]]))
+            [clojure.core.async :refer [<! timeout go]]
+            [new-todo-bot.db.helpers.user-last-course :refer [get-last-course get-next-course-element]]))
 
 (def token (env :telegram-token))
 
@@ -31,6 +32,19 @@
   (ensure-user-exists! user)
   (ensure-chat-exists! chat)
   (t/send-text token (:id chat) "Для вывода списка курсов напишите команду /list"))
+
+(defn get-last-requested-course
+  "Отправка последнего запрошенного курса"
+  [{chat :chat user :from}]
+  (let [{:keys [element_id element_type]} (first (get-last-course (:id user)))]
+    (c/get-item- token (:id chat) element_id element_type)))
+
+(defn get-next-course
+  "Отправка последнего запрошенного курса"
+  [{chat :chat user :from}]
+  (if-let [{:keys [element_id element_type]} (first (get-next-course-element (:id user)))]
+    (c/get&save-item-for-user token (:id chat) element_id element_type)
+    (t/send-text token (:id chat) "Дальше ничего нет")))
 
 (defn defcallback
   "Регистрация колбэков и предобработка сообщения. В будущем
@@ -66,11 +80,11 @@
 (defn start-course
   "Создает для пользователя запись прогресса, возвращает
   содержание первой директории курса."
-  [{:keys [] {:keys [chat]} :message} {id :id}]
+  [{:keys [] {:keys [chat from]} :message} {id :id}]
   (let [id (Integer/parseInt id)
         user (first (get-by [:users :id] {:telegram_id (:id chat)}))]
     (create-user-course! id (:id user))
-    (c/get-item- token (:id chat) id const/course-type)))
+    (c/get&save-item-for-user token (:id chat) id const/course-type)))
 
 (def edit-keyboard
   (fn
@@ -81,7 +95,7 @@
   "Отправляет элемент или содержание директории"
   [{:keys [] {:keys [chat message_id]} :message} {:keys [id type page-number page-size]}]
   (let [send-keyboard (partial edit-keyboard message_id)]
-    (c/get-item-
+    (c/get&save-item-for-user
       token
       (:id chat)
       id
@@ -89,16 +103,25 @@
       :page-number page-number
       :page-size page-size
       :send-keyboard send-keyboard)))
+(defmacro if-let*
+  ([bindings then]
+   `(if-let* ~bindings ~then nil))
+  ([bindings then else]
+   (if (seq bindings)
+     `(if-let [~(first bindings) ~(second bindings)]
+        (if-let* ~(drop 2 bindings) ~then ~else)
+        ~else)
+     then)))
 
 (defn get-dir-above
   "Отправить содержание родительской директории"
   [{:keys [] {:keys [chat message_id]} :message} {id :id _ :type}]
   (let [send-keyboard (partial edit-keyboard message_id)]
     (if-let [element (first (get-by TCourseElements {:id (u/parse-int id)}))]
-      (if-let [parent-id (:parent_id element)]
-        (c/get-item- token (:id chat) (u/parse-int parent-id) const/element-type :send-keyboard send-keyboard)
+      (if-let [parent-id (-> element :parent_id u/parse-int)]
+        (c/get&save-item-for-user token (:id chat) parent-id const/element-type :send-keyboard send-keyboard)
         (let [course-id (:course_id element)]
-          (c/get-item- token (:id chat) course-id const/course-type :send-keyboard send-keyboard)))
+          (c/get&save-item-for-user token (:id chat) course-id const/course-type :send-keyboard send-keyboard)))
       (t/send-text token (:id chat) "Элемент не найден"))))
 
 (defn get-course-files

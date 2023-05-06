@@ -12,6 +12,8 @@
 (h/defhandler handler
   (h/command-fn "list" views/list-)
   (h/command-fn "start" views/start)
+  (h/command-fn "last_course" views/get-last-requested-course)
+  (h/command-fn "next_course" views/get-next-course)
   (h/callback-fn
     (views/defcallback
       :get_course views/get-course
