@@ -30,14 +30,18 @@
 
 (defn build-tree
   "Построение дерева курса в виде вложенной хэш таблицы"
-  [head elements]
+  [head elements & {:keys [depth current-depth]
+                    :or {current-depth 1 depth 2}}]
   (let [head-id (:id head)
         leaf? (:leaf head)
         children (if leaf?
                    []
                    (get elements head-id))
-        enriched-children (map #(build-tree % elements) children)]
-    (assoc head :children enriched-children)))
+        current-depth* (inc current-depth)
+        do-enrich-children (fn [els] (map #(build-tree % elements :depth depth :current-depth current-depth*) els))]
+    (if (and depth (> current-depth* depth))
+      head
+      (assoc head :children (do-enrich-children children)))))
 
 (defn build-course-structure
   "Построение дерева курса. На выходе вложенная мапа курса с
@@ -74,7 +78,7 @@
   (let [send-keyboard (partial send-keyboard token chat-id)
         element-id (u/parse-int element-id)
         build-kb (partial build-course-kb :page-number (u/parse-int page-number) :page-size (u/parse-int page-size))
-        kb-text "Список курсов "]
+        kb-text "Список курсов: "]
     (condp = type-
       const/document-type (->> (get-by TDocuments {:id element-id})
                                first

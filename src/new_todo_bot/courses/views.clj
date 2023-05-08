@@ -25,7 +25,7 @@
   [{chat :chat}]
   (let [courses (take 20 (c/get-courses-list))
         buttons (build-node-buttons courses "get_course")]
-    (ts/send-keyboard token (:id chat) "Список курсов" buttons)))
+    (ts/send-keyboard token (:id chat) "Список курсов: " buttons)))
 
 (defn start
   [{chat :chat user :from}]
@@ -44,7 +44,7 @@
   [{chat :chat user :from}]
   (if-let [{:keys [element_id element_type]} (first (get-next-course-element (:id user)))]
     (c/get&save-item-for-user token (:id chat) element_id element_type)
-    (t/send-text token (:id chat) "Дальше ничего нет")))
+    (t/send-text token (:id chat) "Это последний урок курса")))
 
 (defn defcallback
   "Регистрация колбэков и предобработка сообщения. В будущем
@@ -60,22 +60,40 @@
         (handler message data))
       message)))
 
+(comment
+
+  (let [{:keys [author display_name source_url description]} {:id 1,
+                                                                :name "Effortless English - New method learning english",
+                                                                :display_name "Effortless English - New method learning english",
+                                                                :author nil,
+                                                                :source nil,
+                                                                :description nil,
+                                                                :source_url nil,
+                                                                :created_at nil} ]
+    (println author display_name source_url description)))
+
 ;; callbacks
 (defn get-course
   "Возвращает структуру курса и его описание"
   [{:keys [] {:keys [chat]} :message} {id- :id}]
   (let [id (Integer/parseInt id-)
         course (c/get-course-information id)
+        {:keys [author display_name source_url description]} course
         course-structure-col (c/build-course-structure id)
         course-structure-text (reduce into [] (map c/render-course-structure course-structure-col))
         structure (s/join "\n" course-structure-text)
-        text (str "Курс: " (:display_name course) "\n"
-                  "Автор: " (:author course) "\n"
-                  "Источник: " (:source_url course) "\n"
-                  "Описание: " (:description course) "\n\n"
+        text (str "Курс: " display_name "\n"
+                  (when author (str "Автор: " author "\n" ))
+                  (when source_url (str "Источник: " source_url "\n"))
+                  (when description (str "Описание: " description "\n\n"))
                   structure)
+        ;; Ограничение в tg bot api больше ~4000 символов нельзя
+        cropped-text (subs text 0 (min (count text) 4000))
+        cropped-text* (if (> (count text) 4000)
+                        (str cropped-text "\n...")
+                        cropped-text)
         start-course-button (kb/single-button-kb "Начать" (form-encode {:url "start_course" :id id}))]
-    (ts/send-keyboard token (:id chat) (subs text 0 (min (count text) 4000)) start-course-button)))
+    (ts/send-keyboard token (:id chat) cropped-text* start-course-button)))
 
 (defn start-course
   "Создает для пользователя запись прогресса, возвращает
@@ -88,8 +106,8 @@
 
 (def edit-keyboard
   (fn
-    [message-id token chat-id _ keyboard]
-    (ts/edit-keyboard token chat-id message-id keyboard)))
+    [message-id token chat-id text keyboard]
+    (ts/edit-message token chat-id message-id text keyboard)))
 
 (defn get-item
   "Отправляет элемент или содержание директории"

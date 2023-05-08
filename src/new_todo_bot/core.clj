@@ -4,7 +4,8 @@
             [morse.handlers :as h]
             [morse.polling :as p]
             [new-todo-bot.courses.views :as views]
-            [environ.core :refer [env]])
+            [environ.core :refer [env]]
+            [new-todo-bot.common.middlewares :refer [exception-middleware]])
   (:gen-class))
 
 (def token (env :telegram-token))
@@ -23,7 +24,7 @@
       :get_course_files views/get-course-files))
   (h/message message (println "Intercepted message:" message)))
 
-(defonce channel (p/start token handler))
+(defonce channel (p/start token (exception-middleware handler)))
 
 (defn -main
   [& _]
@@ -38,7 +39,7 @@
 (defn restart-app
   []
   (p/stop channel)
-  (def channel (p/start token handler)))
+  (def channel (p/start token (exception-middleware handler))))
 
 (comment
   (restart-app))
