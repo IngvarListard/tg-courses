@@ -5,7 +5,8 @@
             [morse.polling :as p]
             [new-todo-bot.courses.views :as views]
             [environ.core :refer [env]]
-            [new-todo-bot.common.middlewares :refer [exception-middleware]])
+            [new-todo-bot.common.middlewares :refer [exception-middleware]]
+            [clojure.tools.logging :as log])
   (:gen-class))
 
 (def token (env :telegram-token))
@@ -24,21 +25,29 @@
       :get_course_files views/get-course-files))
   (h/message message (println "Intercepted message:" message)))
 
-(defonce channel (p/start token (exception-middleware handler)))
+;(defonce channel (p/start token (exception-middleware handler)))
 
 (defn -main
   [& _]
+
   (when (str/blank? token)
     (println "Please provide token in TELEGRAM_TOKEN environment variable!")
     (System/exit 1))
 
   (println "Starting the new-todo-bot")
 
-  (<!! (p/start token handler)))
+  (let [ch (p/start token handler)]
+    (.addShutdownHook
+      (Runtime/getRuntime)
+      (Thread. ^Runnable (fn []
+                           (println "Stopping gracefully")
+                           (p/stop ch)
+                           (System/exit 0))))
+    (<!! ch)))
 
 (defn restart-app
   []
-  (p/stop channel)
+  ;(p/stop channel)
   (def channel (p/start token (exception-middleware handler))))
 
 (comment
