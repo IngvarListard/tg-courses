@@ -27,7 +27,7 @@
 
 (defn get-last-course
   [tg-user-id]
-  (db :execute! {:select [:element-id :element-type]
+  (db :execute! {:select [:element-id :element-type :course-id]
                  :from   TUserLastCourse
                  :join   [:users [:= :user_last_course.user_id :users.id]]
                  :where  [:= :telegram_id tg-user-id]}))

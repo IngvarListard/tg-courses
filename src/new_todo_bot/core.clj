@@ -4,18 +4,17 @@
             [morse.handlers :as h]
             [morse.polling :as p]
             [new-todo-bot.courses.views :as views]
-            [environ.core :refer [env]]
             [new-todo-bot.common.middlewares :refer [exception-middleware]]
+            [new-todo-bot.config :refer [token gpt-token]]
             [clojure.tools.logging :as log])
   (:gen-class))
-
-(def token (env :telegram-token))
 
 (h/defhandler handler
   (h/command-fn "list" views/list-)
   (h/command-fn "start" views/start)
   (h/command-fn "last_course" views/get-last-requested-course)
   (h/command-fn "next_course" views/get-next-course)
+  (h/command-fn "ask_mentor" views/ask-mentor)
   (h/callback-fn
     (views/defcallback
       :get_course views/get-course

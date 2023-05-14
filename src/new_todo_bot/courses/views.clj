@@ -13,12 +13,15 @@
             [new-todo-bot.courses.keyboards :refer [build-node-buttons build-course-kb new-dir-up-button]]
             [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
             [new-todo-bot.db.helpers.documents :refer [TDocuments]]
-            [environ.core :refer [env]]
             [new-todo-bot.common.utils :as u]
             [clojure.core.async :refer [<! timeout go]]
-            [new-todo-bot.db.helpers.user-last-course :refer [get-last-course get-next-course-element]]))
+            [new-todo-bot.db.helpers.user-last-course :refer [get-last-course get-next-course-element]]
+            [new-todo-bot.config :refer [token gpt-token]]
+            [wkok.openai-clojure.api :as gpt-api]
+            [new-todo-bot.chatgpt.prompts :as ps]
+            [new-todo-bot.db.helpers.courses :refer [TCourses]]))
 
-(def token (env :telegram-token))
+;; Commands
 
 (defn list-
   "Отправляет пользователю список доступных курсов"
@@ -46,6 +49,23 @@
     (c/get&save-item-for-user token (:id chat) element_id element_type)
     (t/send-text token (:id chat) "Это последний урок курса")))
 
+(defn ask-mentor
+  "Отправить вопрос к chatgpt"
+  [{:keys [text from] {id :id} :chat :as message}]
+  (if text
+    (let [{:keys [course_id]} (first (get-last-course (:id from)))
+          {:keys [display_name author]} (first (get-by TCourses {:id course_id}))
+          r (gpt-api/create-chat-completion
+              {:model    "gpt-3.5-turbo"
+               :messages [{:role "system" :content (format ps/course display_name author)}
+                          {:role "user" :content text}]}
+              {:api-key gpt-token})
+          r-text (-> r :choices first :message :content)]
+      (t/send-text token id r-text))
+    (t/send-text token id "you send nothing")))
+
+;; Callbacks
+
 (defn defcallback
   "Регистрация колбэков и предобработка сообщения. В будущем
   здесь могут появиться middleware."
@@ -62,17 +82,16 @@
 
 (comment
 
-  (let [{:keys [author display_name source_url description]} {:id 1,
-                                                                :name "Effortless English - New method learning english",
-                                                                :display_name "Effortless English - New method learning english",
-                                                                :author nil,
-                                                                :source nil,
-                                                                :description nil,
-                                                                :source_url nil,
-                                                                :created_at nil} ]
+  (let [{:keys [author display_name source_url description]} {:id           1,
+                                                              :name         "Effortless English - New method learning english",
+                                                              :display_name "Effortless English - New method learning english",
+                                                              :author       nil,
+                                                              :source       nil,
+                                                              :description  nil,
+                                                              :source_url   nil,
+                                                              :created_at   nil}]
     (println author display_name source_url description)))
 
-;; callbacks
 (defn get-course
   "Возвращает структуру курса и его описание"
   [{:keys [] {:keys [chat]} :message} {id- :id}]
@@ -83,7 +102,7 @@
         course-structure-text (reduce into [] (map c/render-course-structure course-structure-col))
         structure (s/join "\n" course-structure-text)
         text (str "Курс: " display_name "\n"
-                  (when author (str "Автор: " author "\n" ))
+                  (when author (str "Автор: " author "\n"))
                   (when source_url (str "Источник: " source_url "\n"))
                   (when description (str "Описание: " description "\n\n"))
                   structure)
@@ -152,6 +171,16 @@
     (go (doseq [doc documents]
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))
+
+(comment
+  (require '[com.mjdowney.rich-comment-tests :refer [run-ns-tests!]])
+  (com.mjdowney.rich-comment-tests/run-ns-tests! *ns*)
+  )
+
+^:rct/test
+(comment
+  (range 3)                                                 ;=> (0 1 2)
+  )
 
 (comment
   (ts/send-keyboard token 37521589 "asdf" a)
