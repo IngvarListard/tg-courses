@@ -3,10 +3,9 @@
             [clojure.string :as str]
             [morse.handlers :as h]
             [morse.polling :as p]
-            [new-todo-bot.courses.views :as views]
             [new-todo-bot.common.middlewares :refer [exception-middleware]]
-            [new-todo-bot.config :refer [token gpt-token]]
-            [clojure.tools.logging :as log])
+            [new-todo-bot.config :refer [token]]
+            [new-todo-bot.courses.views :as views])
   (:gen-class))
 
 (h/defhandler handler
@@ -24,7 +23,7 @@
       :get_course_files views/get-course-files))
   (h/message message (println "Intercepted message:" message)))
 
-;(defonce channel (p/start token (exception-middleware handler)))
+(defonce channel (p/start token (exception-middleware handler)))
 
 (defn -main
   [& _]

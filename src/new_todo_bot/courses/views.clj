@@ -1,25 +1,24 @@
 (ns new-todo-bot.courses.views
-  (:require [new-todo-bot.courses.controllers :as c]
-            [new-todo-bot.telegram.keyboards :as kb]
-            [new-todo-bot.telegram.senders :as ts]
+  (:require [clojure.core.async :refer [<! go timeout]]
             [clojure.string :as s]
-            [ring.util.codec :refer [form-encode form-decode]]
             [clojure.walk :refer [keywordize-keys]]
-            [new-todo-bot.db.helpers.user-progress :refer [create-user-course!]]
-            [new-todo-bot.db.helpers.common :refer [get-by]]
-            [new-todo-bot.db.helpers.users :refer [ensure-user-exists! ensure-chat-exists!]]
             [morse.api :as t]
+            [new-todo-bot.chatgpt.prompts :as ps]
+            [new-todo-bot.common.utils :as u]
+            [new-todo-bot.config :refer [gpt-token token]]
+            [new-todo-bot.courses.controllers :as c]
+            [new-todo-bot.courses.keyboards :refer [build-course-kb build-node-buttons new-dir-up-button]]
+            [new-todo-bot.db.helpers.common :refer [get-by]]
             [new-todo-bot.db.helpers.constants :as const]
-            [new-todo-bot.courses.keyboards :refer [build-node-buttons build-course-kb new-dir-up-button]]
             [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
             [new-todo-bot.db.helpers.documents :refer [TDocuments]]
-            [new-todo-bot.common.utils :as u]
-            [clojure.core.async :refer [<! timeout go]]
-            [new-todo-bot.db.helpers.user-last-course :refer [get-last-course get-next-course-element]]
-            [new-todo-bot.config :refer [token gpt-token]]
-            [wkok.openai-clojure.api :as gpt-api]
-            [new-todo-bot.chatgpt.prompts :as ps]
-            [new-todo-bot.db.helpers.courses :refer [TCourses]]))
+            [new-todo-bot.db.helpers.user-last-course :refer [get-last-course get-last-course-desc get-next-course-element]]
+            [new-todo-bot.db.helpers.user-progress :refer [create-user-course!]]
+            [new-todo-bot.db.helpers.users :refer [ensure-chat-exists! ensure-user-exists!]]
+            [new-todo-bot.telegram.keyboards :as kb]
+            [new-todo-bot.telegram.senders :as ts]
+            [ring.util.codec :refer [form-decode form-encode]]
+            [wkok.openai-clojure.api :as gpt-api]))
 
 ;; Commands
 
@@ -53,8 +52,7 @@
   "Отправить вопрос к chatgpt"
   [{:keys [text from] {id :id} :chat :as message}]
   (if text
-    (let [{:keys [course_id]} (first (get-last-course (:id from)))
-          {:keys [display_name author]} (first (get-by TCourses {:id course_id}))
+    (let [{:keys [display_name author]} (get-last-course-desc (:id from))
           r (gpt-api/create-chat-completion
               {:model    "gpt-3.5-turbo"
                :messages [{:role "system" :content (format ps/course display_name author)}
@@ -62,7 +60,7 @@
               {:api-key gpt-token})
           r-text (-> r :choices first :message :content)]
       (t/send-text token id r-text))
-    (t/send-text token id "you send nothing")))
+    (t/send-text token id "you sent nothing")))
 
 ;; Callbacks
 

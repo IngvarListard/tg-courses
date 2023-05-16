@@ -3,7 +3,8 @@
             [new-todo-bot.db.helpers.constants :as const]
             [toucan.db :as db]
             [new-todo-bot.db.conn :refer [db]]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [new-todo-bot.db.helpers.courses :refer [TCourses]]))
 
 (defn dfield
   [& args]
@@ -27,10 +28,27 @@
 
 (defn get-last-course
   [tg-user-id]
-  (db :execute! {:select [:element-id :element-type :course-id]
+  (db :execute! {:select [:element-id :element-type]
                  :from   TUserLastCourse
                  :join   [:users [:= :user_last_course.user_id :users.id]]
                  :where  [:= :telegram_id tg-user-id]}))
+
+
+(defn get-course-display-name-by-element-id
+  [el-id]
+  (db :execute! {:select [:id :display_name]
+                 :from   TCourses
+                 :join   [:course_elements [:= :courses.id :course_elements.course_id]]
+                 :where  [:= :course_elements.id el-id]}))
+
+(defn get-last-course-desc
+  [tg-user-id]
+  (when-let [{:keys [element_id element_type]} (-> tg-user-id get-last-course first)]
+    (let [get-keys (fn [el] (select-keys el [:author :display_name]))]
+      (println element_type)
+      (condp = element_type
+        const/course-type (->> {:id element_id} (get-by TCourses) first get-keys)
+        const/element-type (->> element_id get-course-display-name-by-element-id first get-keys)))))
 
 (defmulti get-next-course
           (fn [_ element-id] element-id))
