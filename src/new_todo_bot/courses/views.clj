@@ -7,7 +7,7 @@
             [new-todo-bot.common.utils :as u]
             [new-todo-bot.config :refer [gpt-token token]]
             [new-todo-bot.courses.controllers :as c]
-            [new-todo-bot.courses.keyboards :refer [build-course-kb build-node-buttons new-dir-up-button]]
+            [new-todo-bot.courses.keyboards :refer [build-node-buttons]]
             [new-todo-bot.db.helpers.common :refer [get-by]]
             [new-todo-bot.db.helpers.constants :as const]
             [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
@@ -51,7 +51,7 @@
 (defn ask-mentor
   "Отправить вопрос к chatgpt"
   [{:keys [text from] {id :id} :chat :as message}]
-  (if text
+  (if (seq text)
     (let [{:keys [display_name author]} (get-last-course-desc (:id from))
           r (gpt-api/create-chat-completion
               {:model    "gpt-3.5-turbo"
@@ -77,18 +77,6 @@
         (println "got callback\n" data)
         (handler message data))
       message)))
-
-(comment
-
-  (let [{:keys [author display_name source_url description]} {:id           1,
-                                                              :name         "Effortless English - New method learning english",
-                                                              :display_name "Effortless English - New method learning english",
-                                                              :author       nil,
-                                                              :source       nil,
-                                                              :description  nil,
-                                                              :source_url   nil,
-                                                              :created_at   nil}]
-    (println author display_name source_url description)))
 
 (defn get-course
   "Возвращает структуру курса и его описание"
@@ -170,40 +158,7 @@
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))
 
-(comment
-  (require '[com.mjdowney.rich-comment-tests :refer [run-ns-tests!]])
-  (com.mjdowney.rich-comment-tests/run-ns-tests! *ns*)
-  )
-
 ^:rct/test
 (comment
   (range 3)                                                 ;=> (0 1 2)
   )
-
-(comment
-  (ts/send-keyboard token 37521589 "asdf" a)
-  (new-dir-up-button 10)
-  (build-course-kb :course-id 1 :parent-id 10)
-  (start-course {:message {:chat {:id 37521589}}} {:id 1})
-  (:tg_file_id (first (get-by TDocuments {:id 1})))
-
-  (get-item {:message {:chat {:id 37521589}}} {:id 1 :type const/element-type})
-  (case "documents"
-    const/document-type (-> (get-by TDocuments {:telegram_id id})
-                            first
-                            (t/send-document
-                              token
-                              (:id chat)))
-    const/element-type (ts/send-keyboard
-                         token
-                         (:id chat)
-                         "Список курсов"
-                         (build-course-kb :parent-id id)))
-  (get-course-files {:message {:chat {:id 37521589}}}
-                    {:parent-id 56 :course-id ""})
-  (get-by TDocuments (merge {:course-element-id (u/parse-int 56)}
-                            (when (u/parse-int "")
-                              {:course-id (u/parse-int "")})))
-  (get-dir-above
-    {:message {:chat {:id 37521589}}} {:id 3 :type ""}))
-

@@ -1,11 +1,10 @@
 (ns new-todo-bot.courses.keyboards
-  (:require [new-todo-bot.db.helpers.constants :as const]
-            [new-todo-bot.db.helpers.course-elements :refer [get-course-elements get-course-content]]
+  (:require [clojure.set :refer [rename-keys]]
+            [new-todo-bot.db.helpers.common :refer [get-page-data new-pager]]
+            [new-todo-bot.db.helpers.constants :as const]
+            [new-todo-bot.db.helpers.course-elements :refer [get-course-content]]
             [new-todo-bot.telegram.keyboards :as kb]
-            [ring.util.codec :refer [form-encode]]
-            [clojure.set :refer [rename-keys]]
-            [new-todo-bot.db.helpers.common :refer [new-pager get-page-data]]
-            [clojure.pprint :refer [pprint]]))
+            [ring.util.codec :refer [form-encode]]))
 
 (defn encode-callback-payload
   [url payload]
@@ -36,15 +35,6 @@
      (str (get-icon el) (get-name el))
      (encode-callback-payload callback-url (into {:id (get-id el)} payload)))))
 
-(comment
-  (new-node-button
-    {:id           1
-     :display_name "asfd"
-     :type         const/folder-type}
-    "asdf_dfas"
-    :payload {:a 1 :b 2})
-  )
-
 (defn build-node-buttons
   ([elements callback-url] (build-node-buttons elements callback-url {}))
   ([elements callback-url opts]
@@ -69,21 +59,12 @@
           direction-icon
           (encode-callback-payload "get_item" {:id id :page-number page-number :type type-})))))
 
-(comment
-  (concat (new-pagination-button 2 "➡️" 33 nil)
-          (new-pagination-button 2 "➡️" 33 nil))
-  )
-
 (defn new-download-all-files-button
   [parent-id course-id]
   (when (or parent-id course-id)
     (let [callback (encode-callback-payload "get_course_files" {:parent-id parent-id :course-id course-id})]
       (kb/new-button "⬇️ Получить все файлы текущей директории", callback))))
 
-(comment
-  (build-course-kb :parent-id 13 :page-number 2)
-  (build-course-kb :course-id 1 :page-number 2)
-  )
 (defn build-course-kb
   [& {:keys [course-id parent-id page-number page-size get-content] :as args
       :or   {page-number 1 page-size const/default-page-size get-content get-course-content}}]
@@ -109,12 +90,3 @@
                 (when navigation-buttons [navigation-buttons])
                 (when download-all-files-button [download-all-files-button]))]
     lines))
-
-(comment
-  (build-course-kb {:course-id 1 :parent-id 38})
-  (build-course-kb {:course-id 1 :parent-id 38})
-  (defn ttt
-    [& {:keys [] :as args}]
-    (println args))
-  (apply ttt [:a 1 :b 2 :c 3])
-  )

@@ -16,12 +16,6 @@
       ".txt" (set-doc-type document)
       document)))
 
-(comment
-  (def matcher (re-matcher #"(?<type>.mp3|.txt|.pdf)" "asdfasdfads.mp3"))
-  (re-groups matcher)
-
-  (set-document-type {:display_name "asdfasdfasdf.mp3"}))
-
 (defn set-display-name
   [element]
   (let [display-name (-> (:display_name element)
@@ -35,10 +29,6 @@
         sort-position (try (Float/parseFloat sort-string)
                            (catch Exception _ nil))]
     (assoc element :sort sort-position)))
-(comment
-  (try (/ 1 1)
-       (catch Exception ex (println ex)))
-  )
 
 (defn get-documents
   [course-id]

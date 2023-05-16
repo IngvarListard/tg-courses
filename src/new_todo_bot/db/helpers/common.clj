@@ -41,10 +41,6 @@
                 (into [:and] where-cond))]
     where))
 
-(comment
-  (build-where-condition {:id 1})
-  )
-
 (defn update-by!
   [table-fields condition object]
   (println "condition" condition)
@@ -81,10 +77,6 @@
   (get-prev-page-number [p])
   (get-last-page-number [p]))
 
-(comment
-  (def p (->Pager 1 10 nil 6))
-  (.get-next-page-number p)
-  )
 (defrecord Pager
   [^Integer page-number ^Integer page-size ^IFn get-data-func ^Integer total-count]
 
@@ -133,19 +125,7 @@
   (let [vec-params (into [] cat kwargs)]
     (apply f vec-params)))
 
-(comment
-  (let []
-    (require '[new-todo-bot.db.helpers.course-elements :refer [get-course-content]])
-    (def p (new-pager 1 10 get-course-content))
-    (.get-page-data p)
-    (get-page-data p)
-    (def pager {:page-number   1
-                :page-size     10
-                :get-data-func (partial get-course-content :course-id 1 :parent-id 13)}))
-  (get-next-page pager)
-  (def bbb (partial get-course-content :course-id 1 :parent-id 13))
-  (bbb :limit 2)
-  (get-page-data pager)
-  (get-course-content :course-id 1 :parent-id 3 :return-count? true)
-  (get-previous-page pager)
-  )
+(defn get-one-by
+  [table-fields condition & {:keys [order-by offset limit join] :as kwargs}]
+  (first (apply-map (partial get-by table-fields condition) kwargs)))
+

@@ -3,12 +3,8 @@
             [new-todo-bot.db.helpers.constants :as const]
             [toucan.db :as db]
             [new-todo-bot.db.conn :refer [db]]
-            [clojure.string :as s]
             [new-todo-bot.db.helpers.courses :refer [TCourses]]))
 
-(defn dfield
-  [& args]
-  (keyword (s/join "." (map name args))))
 (def ^:const TUserLastCourse :user_last_course)
 (defn update-user-last-course!
   "Обновить последний запрошенный пользователем курс,
@@ -32,7 +28,6 @@
                  :from   TUserLastCourse
                  :join   [:users [:= :user_last_course.user_id :users.id]]
                  :where  [:= :telegram_id tg-user-id]}))
-
 
 (defn get-course-display-name-by-element-id
   [el-id]
@@ -76,6 +71,3 @@
   (let [[{:keys [element_id element_type]}] (get-last-course tg-user-id)]
     (println element_type element_id)
     (get-next-course element_id element_type)))
-
-(comment
-  )

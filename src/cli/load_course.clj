@@ -61,13 +61,6 @@
 (defn send-file [file chat-id]
   (api/send-document token chat-id file))
 
-(comment
-
-  (send-file
-    (io/file
-      "/Users/igorlisovcov/Documents/projects/new-todo-bot/resources/courses/Effortless English - New method learning english/Level 2/2.2_double_standard/Double Standard POV.mp3")
-    37521589))
-
 (defn update-document!
   [document-id file-name course-id parent-id tg-file-id]
   (db :execute!
@@ -198,8 +191,3 @@
   (let [course-id (ensure-course-exists! "Effortless English - New method learning english")]
     (db/transaction
       (load-course resources-dir course-id))))
-
-(comment
-  (println resources)
-  (def f (io/file "/Users/igorlisovcov/Downloads"))
-  (map #(join-path "/" (str %1)) (.list f)))
