@@ -27,7 +27,7 @@
   [{chat :chat}]
   (let [courses (take 20 (c/get-courses-list))
         buttons (build-node-buttons courses "get_course")]
-    (ts/send-keyboard token (:id chat) "Список курсов: " buttons)))
+    (ts/send-keyboard token (:id chat) "Список доступных курсов: " buttons)))
 
 (defn start
   [{chat :chat user :from}]
@@ -97,7 +97,7 @@
         cropped-text* (if (> (count text) 4000)
                         (str cropped-text "\n...")
                         cropped-text)
-        start-course-button (kb/single-button-kb "Начать" (form-encode {:url "start_course" :id id}))]
+        start-course-button (kb/single-button-kb "Начать изучение" (form-encode {:url "start_course" :id id}))]
     (ts/send-keyboard token (:id chat) cropped-text* start-course-button)))
 
 (defn start-course
@@ -158,6 +158,10 @@
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))
 
+(comment
+  (t/send-text token 37521589 {:parse_mode "markdown"} "```python\npre-formatted fixed-width code block written in the Python programming language\n```")
+  (t/send-text token 37521589 {:parse_mode "markdown"} "[test](https://example.com)")
+  )
 ^:rct/test
 (comment
   (range 3)                                                 ;=> (0 1 2)

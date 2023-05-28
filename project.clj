@@ -7,7 +7,7 @@
 
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [environ "1.2.0"]
-                 [morse "0.2.4"]
+                 [morse "0.4.3"]
                  [migratus "1.4.9"]
                  [org.clojure/java.jdbc "0.7.12"]
                  [com.mchange/c3p0 "0.9.5.5"]
