@@ -8,3 +8,8 @@
       Long (int s)
       Float (int s))
     (catch Exception _ nil)))
+
+(defn md-link
+  ([url] (md-link url url))
+  ([url text]
+   (format "[%s](%s)" text url)))

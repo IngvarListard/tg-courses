@@ -1,6 +1,6 @@
 (ns new-todo-bot.courses.keyboards
   (:require [clojure.set :refer [rename-keys]]
-            [new-todo-bot.db.helpers.common :refer [get-page-data new-pager]]
+            [new-todo-bot.db.helpers.common :refer [get-page-data new-pager apply-map]]
             [new-todo-bot.db.helpers.constants :as const]
             [new-todo-bot.db.helpers.course-elements :refer [get-course-content]]
             [new-todo-bot.telegram.keyboards :as kb]
@@ -16,19 +16,6 @@
   (get const/icons (get el :type const/folder-type)))
 
 (defn new-node-button
-  "Returns blah-blah-blah.
-
-  1. `el` more about element
-  2. `url` callback URL, more about this
-  3. `payload` what is payload, what fields can it contains
-  4. `opts`
-      + `:get-id` the function to get ID from `el`, default `:id`.
-      + `:get-name` the function to get name of `el`, default `:display_name`.
-  "
-  ;{:arglists '([el url]
-  ;             [el url {:keys [...] :as payload}]
-  ;             [el url {:keys [...] :as payload} {:keys [get-id get-name]}])}
-
   ([el callback-url & {:keys [get-id get-name payload]
                        :or   {get-id :id get-name :display_name payload {}}}]
    (kb/new-button

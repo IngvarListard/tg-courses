@@ -1,7 +1,7 @@
 (ns new-todo-bot.courses.controllers
   (:require [clojure.string :as s]
             [new-todo-bot.common.utils :as u]
-            [new-todo-bot.db.helpers.common :refer [get-by]]
+            [new-todo-bot.db.helpers.common :refer [get-by get-one-by apply-map]]
             [new-todo-bot.db.helpers.constants :as const]
             [new-todo-bot.db.helpers.course-elements :refer [TCourseElements]]
             [new-todo-bot.db.helpers.courses :refer [Courses TCourses]]
@@ -31,7 +31,7 @@
 (defn build-tree
   "Построение дерева курса в виде вложенной хэш таблицы"
   [head elements & {:keys [depth current-depth]
-                    :or {current-depth 1 depth 2}}]
+                    :or   {current-depth 1 depth 2}}]
   (let [head-id (:id head)
         leaf? (:leaf head)
         children (if leaf?
@@ -72,29 +72,46 @@
          new-lines (map #(render-course-structure % ident) (:children root-))]
      (flatten (concat new-line new-lines)))))
 
+(defmulti send-item
+          (fn [typ token chat-id element-id send-keyboard] typ))
+
+(defmethod send-item
+  const/document-type
+  [_ token chat-id element-id send-keyboard]
+  (let [document (get-one-by TDocuments {:id element-id})
+        {:keys [url display_name tg_file_id type]} document]
+    (if (= type const/external-video-type)
+      (t/send-text token chat-id {:parse_mode "markdown"} (u/md-link url display_name))
+      (t/send-document token chat-id tg_file_id))))
+
+(defmethod send-item
+  const/element-type
+  [_ token chat-id element-id send-keyboard]
+  (let [kb-text "Список курсов: "
+        text (->> (get-one-by [TCourseElements :display_name] {:id element-id})
+                  :display_name
+                  (str kb-text))]
+    (send-keyboard token chat-id text :parent-id element-id)))
+
+(defmethod send-item
+  const/course-type
+  [_ token chat-id element-id send-keyboard]
+  (let [kb-text "Список курсов: "
+        text (->> (get-one-by [TCourses :display_name] {:id element-id})
+                  :display_name
+                  (str kb-text))]
+    (send-keyboard token chat-id text :course-id element-id :parent-id nil)))
+
 (defn get-item-
   [token chat-id element-id type- & {:keys [page-number page-size send-keyboard]
                                      :or   {send-keyboard ts/send-keyboard}}]
-  (let [send-keyboard (partial send-keyboard token chat-id)
-        element-id (u/parse-int element-id)
-        build-kb (partial build-course-kb :page-number (u/parse-int page-number) :page-size (u/parse-int page-size))
-        kb-text "Список курсов: "]
-    (condp = type-
-      const/document-type (->> (get-by TDocuments {:id element-id})
-                               first
-                               :tg_file_id
-                               (t/send-document token chat-id))
-      const/element-type (let [text (->> (get-by [TCourseElements :display_name] {:id element-id})
-                                         first
-                                         :display_name
-                                         (str kb-text))]
-                           (send-keyboard text (build-kb :parent-id element-id)))
-      const/course-type (let [text (->> (get-by [TCourses :display_name] {:id element-id})
-                                        first
-                                        :display_name
-                                        (str kb-text))]
-                          (send-keyboard text (build-kb :course-id element-id :parent-id nil)))
-      (t/send-text token chat-id (str "Не найден тип документа " type-)))))
+  (let [element-id (u/parse-int element-id)
+        send-keyboard (fn [token chat-id text & {:keys [] :as kwargs}]
+                        (let [kb (apply-map build-course-kb (merge {:page-number (u/parse-int page-number)
+                                                                    :page-size   (u/parse-int page-size)}
+                                                                   kwargs))]
+                          (send-keyboard token chat-id text kb)))]
+    (send-item type- token chat-id element-id send-keyboard)))
 
 (defn get&save-item-for-user
   [token chat-id element-id type- & {:keys [page-number page-size send-keyboard]

@@ -19,7 +19,8 @@
   ([token chat-id text keyboard options]
    (let [message (into {:chat_id chat-id
                         :text text
-                        :reply_markup {:inline_keyboard keyboard}}
+                        :reply_markup {:inline_keyboard keyboard}
+                        :parse_mode "markdown"}
                        options)]
      (send-message token message))))
 
@@ -35,7 +36,8 @@
   (let [message (into {:chat_id chat-id
                        :message_id message-id
                        :text text
-                       :reply_markup {:inline_keyboard keyboard}})]
+                       :reply_markup {:inline_keyboard keyboard}
+                       :parse_mode "markdown"})]
     (send-message token message "/editMessageText")))
 
 (defn send-menu
@@ -45,7 +47,8 @@
    (let [url (str base-url token "/sendMessage")
          body (into {:chat_id chat-id
                      :text text
-                     :reply_markup {:keyboard keyboard}} options)
+                     :reply_markup {:keyboard keyboard}
+                     :parse_mode "markdown"} options)
          resp (http/post url {:content-type :json
                               :as :json
                               :form-params body})]

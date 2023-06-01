@@ -27,7 +27,7 @@
   [{chat :chat}]
   (let [courses (take 20 (c/get-courses-list))
         buttons (build-node-buttons courses "get_course")]
-    (ts/send-keyboard token (:id chat) "Список доступных курсов: " buttons)))
+    (ts/send-keyboard token (:id chat) "Список доступных курсов: ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" buttons)))
 
 (defn start
   [{chat :chat user :from}]
@@ -126,6 +126,7 @@
       :page-number page-number
       :page-size page-size
       :send-keyboard send-keyboard)))
+
 (defmacro if-let*
   ([bindings then]
    `(if-let* ~bindings ~then nil))

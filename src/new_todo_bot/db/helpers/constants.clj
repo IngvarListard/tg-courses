@@ -4,6 +4,7 @@
 (def ^:const document-type "documents")
 (def ^:const element-type "course_elements")
 (def ^:const course-type "courses")
+(def ^:const external-video-type "external-video")
 (def ^:const element-types #{document-type element-type})
 (def ^:const folder-type "folder")
 (def ^:const icons
