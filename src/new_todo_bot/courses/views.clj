@@ -127,16 +127,6 @@
       :page-size page-size
       :send-keyboard send-keyboard)))
 
-(defmacro if-let*
-  ([bindings then]
-   `(if-let* ~bindings ~then nil))
-  ([bindings then else]
-   (if (seq bindings)
-     `(if-let [~(first bindings) ~(second bindings)]
-        (if-let* ~(drop 2 bindings) ~then ~else)
-        ~else)
-     then)))
-
 (defn get-dir-above
   "Отправить содержание родительской директории"
   [{:keys [] {:keys [chat message_id]} :message} {id :id _ :type}]
@@ -154,16 +144,12 @@
   (let [[parent-id course-id] [(u/parse-int parent-id) (u/parse-int course-id)]
         where-cond (merge {:course-element-id parent-id}
                           (when course-id {:course-id course-id}))
-        documents (get-by TDocuments where-cond)]
-    (go (doseq [doc documents]
+        documents (get-by TDocuments where-cond :order-by :sort)
+        documents-grouped (group-by :type documents)]
+    (when-let [videos (get documents-grouped "external-video")]
+      (->> (map #(str (u/md-link (:url %) (:display_name %))) videos)
+          (s/join "\n")
+          (t/send-text token (:id chat) {:parse_mode "markdown"})))
+    (go (doseq [doc (apply concat (vals (select-keys documents-grouped ["audio" "file"])))]
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))
-
-(comment
-  (t/send-text token 37521589 {:parse_mode "markdown"} "```python\npre-formatted fixed-width code block written in the Python programming language\n```")
-  (t/send-text token 37521589 {:parse_mode "markdown"} "[test](https://example.com)")
-  )
-^:rct/test
-(comment
-  (range 3)                                                 ;=> (0 1 2)
-  )

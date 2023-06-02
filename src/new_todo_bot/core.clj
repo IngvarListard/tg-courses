@@ -1,5 +1,5 @@
 (ns new-todo-bot.core
-  (:require [clojure.core.async :refer [<!!]]
+  (:require [clojure.core.async :refer [<!! timeout]]
             [clojure.string :as str]
             [morse.handlers :as h]
             [morse.polling :as p]
@@ -23,7 +23,10 @@
       :get_course_files views/get-course-files))
   (h/message message (println "Intercepted message:" message)))
 
-(defonce channel (p/start token (exception-middleware handler)))
+;(defonce channel (p/start token (exception-middleware handler)))
+
+(def run? (atom true))
+(def current-chan (atom nil))
 
 (defn -main
   [& _]
@@ -33,19 +36,28 @@
     (System/exit 1))
 
   (println "Starting the new-todo-bot")
+  (.addShutdownHook
+    (Runtime/getRuntime)
+    (Thread. ^Runnable (fn []
+                         (println "Stopping gracefully")
+                         (reset! run? false)
+                         (try
+                           (p/stop @current-chan)
+                           (catch Exception e
+                             (prn "Cant stop chan " e)))
+                         (System/exit 0))))
 
-  (let [ch (p/start token handler)]
-    (.addShutdownHook
-      (Runtime/getRuntime)
-      (Thread. ^Runnable (fn []
-                           (println "Stopping gracefully")
-                           (p/stop ch)
-                           (System/exit 0))))
-    (<!! ch)))
+  (loop [run @run?]
+    (when run
+      (let [ch (p/start token (exception-middleware handler))]
+        (reset! current-chan ch)
+        (let [res (<!! ch)]
+          (prn "Channel closed. Sleeping for 5sec. Result: " res)
+          (<!! (timeout 5000))
+          (recur @run?))))))
 
 (defn restart-app
   []
-  ;(p/stop channel)
   (def channel (p/start token (exception-middleware handler))))
 
 (comment
