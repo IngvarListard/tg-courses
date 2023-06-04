@@ -1,5 +1,6 @@
 (ns new-todo-bot.courses.views
-  (:require [clojure.core.async :refer [<! go timeout]]
+  (:require [clojure.java.io :as io]
+            [clojure.core.async :refer [<! go timeout]]
             [clojure.string :as s]
             [clojure.walk :refer [keywordize-keys]]
             [morse.api :as t]
@@ -78,6 +79,32 @@
         (handler message data))
       message)))
 
+;(defn get-line-from-offset [s offset]
+;  (let [char-offset (s/char-offset s offset)
+;        lines (s/split-lines s)]
+;    (loop [[line & rest] lines
+;           i (count line)]
+;      (if (< char-offset i)
+;        line
+;        (recur rest (+ i 1))))))
+
+(defn crop-bytes [s n]
+  (let [bytes (byte-array n)]
+    (System/arraycopy (.getBytes s) 0 bytes 0 (min n (.length s)))
+    (new String bytes "UTF-8")))
+
+
+
+(defn get-line [s byte-offset]
+  (let [line-number (count (clojure.string/split-lines (crop-bytes s byte-offset)))
+        llll (clojure.string/split-lines s)]
+    (get llll (dec line-number))))
+
+(comment
+  (get-line "asdfa\nqrqwer\ndfasdf\n" 7)
+  (crop-bytes "asdfa\nqrqwer\ndfasdf\n" 3)
+  )
+
 (defn get-course
   "Возвращает структуру курса и его описание"
   [{:keys [] {:keys [chat]} :message} {id- :id}]
@@ -86,17 +113,24 @@
         {:keys [author display_name source_url description]} course
         course-structure-col (c/build-course-structure id)
         course-structure-text (reduce into [] (map c/render-course-structure course-structure-col))
-        structure (s/join "\n" course-structure-text)
+        structure (u/remove-spec-chars (s/join "\n" course-structure-text))
         text (str "Курс: " display_name "\n"
                   (when author (str "Автор: " author "\n"))
-                  (when source_url (str "Источник: " source_url "\n"))
+                  (when source_url (str "Источник: " (u/md-link source_url "YouTube") "\n"))
                   (when description (str "Описание: " description "\n\n"))
-                  structure)
+                  structure
+                  )
         ;; Ограничение в tg bot api больше ~4000 символов нельзя
-        cropped-text (subs text 0 (min (count text) 4000))
         cropped-text* (if (> (count text) 4000)
-                        (str cropped-text "\n...")
-                        cropped-text)
+              (-> text
+                  (subs 0 4000)
+                  (s/split #"\n")
+                  (drop-last)
+                  (#(s/join "\n" %))
+                  (str "\n..."))
+              text)
+        _ (println "The problem in this string" (get-line cropped-text* 3965))
+        _ (println cropped-text*)
         start-course-button (kb/single-button-kb "Начать изучение" (form-encode {:url "start_course" :id id}))]
     (ts/send-keyboard token (:id chat) cropped-text* start-course-button)))
 

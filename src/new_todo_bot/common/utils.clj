@@ -1,4 +1,5 @@
-(ns new-todo-bot.common.utils)
+(ns new-todo-bot.common.utils
+  (:require [clojure.string :as s]))
 (defn parse-int
   [s]
   (try
@@ -9,7 +10,21 @@
       Float (int s))
     (catch Exception _ nil)))
 
+(def filter-letters-only #"[^\p{L}\p{M}\p{N}\p{P}\p{Z}\p{Cf}\p{Cs}\s]")
+
+(defn remove-spec-chars [s]
+  (-> s
+      (s/replace filter-letters-only "")
+      (s/replace #"_" " ")))
+
 (defn md-link
   ([url] (md-link url url))
   ([url text]
-   (format "[%s](%s)" text url)))
+   (cond-> text
+           (not= text url) (s/replace filter-letters-only "")
+           :always (#(format "[%s](%s)" % url)))))
+
+(comment
+  (md-link "http://asdfas.com")
+
+  )

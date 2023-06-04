@@ -77,9 +77,10 @@
   const/document-type
   [_ token chat-id element-id send-keyboard]
   (let [document (get-one-by TDocuments {:id element-id})
-        {:keys [url display_name tg_file_id type]} document]
+        {:keys [url display_name tg_file_id type description]} document]
     (if (= type const/external-video-type)
-      (t/send-text token chat-id {:parse_mode "markdown"} (u/md-link url display_name))
+      (t/send-text token chat-id {:parse_mode "markdown"} (cond-> (u/md-link url display_name)
+                                                                  description (str (u/remove-spec-chars description))))
       (t/send-document token chat-id tg_file_id))))
 
 (defmethod send-item

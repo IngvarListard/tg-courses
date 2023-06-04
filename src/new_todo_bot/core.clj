@@ -23,7 +23,7 @@
       :get_course_files views/get-course-files))
   (h/message message (println "Intercepted message:" message)))
 
-;(defonce channel (p/start token (exception-middleware handler)))
+(defonce channel (p/start token (exception-middleware handler)))
 
 (def run? (atom true))
 (def current-chan (atom nil))
