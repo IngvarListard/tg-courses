@@ -1,5 +1,6 @@
 (ns new-todo-bot.core
   (:require [clojure.core.async :refer [<!! timeout]]
+            [clojure.string :as s]
             [clojure.string :as str]
             [morse.handlers :as h]
             [morse.polling :as p]

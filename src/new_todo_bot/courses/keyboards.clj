@@ -1,6 +1,6 @@
 (ns new-todo-bot.courses.keyboards
   (:require [clojure.set :refer [rename-keys]]
-            [new-todo-bot.db.helpers.common :refer [get-page-data new-pager apply-map]]
+            [new-todo-bot.db.helpers.common :refer [get-page-data new-pager]]
             [new-todo-bot.db.helpers.constants :as const]
             [new-todo-bot.db.helpers.course-elements :refer [get-course-content]]
             [new-todo-bot.telegram.keyboards :as kb]
