@@ -1,6 +1,5 @@
 (ns new-todo-bot.courses.views
-  (:require [clojure.java.io :as io]
-            [clojure.core.async :refer [<! go timeout]]
+  (:require [clojure.core.async :refer [<! go timeout]]
             [clojure.string :as s]
             [clojure.walk :refer [keywordize-keys]]
             [morse.api :as t]
@@ -79,32 +78,6 @@
         (handler message data))
       message)))
 
-;(defn get-line-from-offset [s offset]
-;  (let [char-offset (s/char-offset s offset)
-;        lines (s/split-lines s)]
-;    (loop [[line & rest] lines
-;           i (count line)]
-;      (if (< char-offset i)
-;        line
-;        (recur rest (+ i 1))))))
-
-(defn crop-bytes [s n]
-  (let [bytes (byte-array n)]
-    (System/arraycopy (.getBytes s) 0 bytes 0 (min n (.length s)))
-    (new String bytes "UTF-8")))
-
-
-
-(defn get-line [s byte-offset]
-  (let [line-number (count (clojure.string/split-lines (crop-bytes s byte-offset)))
-        llll (clojure.string/split-lines s)]
-    (get llll (dec line-number))))
-
-(comment
-  (get-line "asdfa\nqrqwer\ndfasdf\n" 7)
-  (crop-bytes "asdfa\nqrqwer\ndfasdf\n" 3)
-  )
-
 (defn get-course
   "Возвращает структуру курса и его описание"
   [{:keys [] {:keys [chat]} :message} {id- :id}]
@@ -129,8 +102,6 @@
                   (#(s/join "\n" %))
                   (str "\n..."))
               text)
-        _ (println "The problem in this string" (get-line cropped-text* 3965))
-        _ (println cropped-text*)
         start-course-button (kb/single-button-kb "Начать изучение" (form-encode {:url "start_course" :id id}))]
     (ts/send-keyboard token (:id chat) cropped-text* start-course-button)))
 
@@ -187,3 +158,14 @@
     (go (doseq [doc (apply concat (vals (select-keys documents-grouped ["audio" "file"])))]
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))
+
+(comment
+  (defn crop-bytes [s n]
+    (let [bytes (byte-array n)]
+      (System/arraycopy (.getBytes s) 0 bytes 0 (min n (.length s)))
+      (new String bytes "UTF-8")))
+
+  (defn get-line [s byte-offset]
+    (let [line-number (count (clojure.string/split-lines (crop-bytes s byte-offset)))
+          llll (clojure.string/split-lines s)]
+      (get llll (dec line-number)))))
