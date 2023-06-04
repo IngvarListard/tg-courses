@@ -10,7 +10,6 @@
   [url payload]
   (form-encode (into {:url url} payload)))
 
-
 (defn get-icon
   [el]
   (get const/icons (get el :type const/folder-type)))
