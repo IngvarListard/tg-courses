@@ -9,14 +9,12 @@
 (defmodel UserCourse :user_course IModel)
 
 (defn create-user-course!
-  "Create user_course record in database"
-  [course-id user-id]
-  (let [course (first (get-by :user-course {:user-id user-id :course-id course-id}))]
-    (if (empty? course)
-      (insert-into! :user_course {:user_id   user-id
-                                  :course_id course-id
-                                  :status    "STARTED"})
-      course)))
+    "Create user_course record in database"
+    [course-id user-id]
+    (or (not-empty (first (get-by :user-course {:user-id user-id :course-id course-id})))
+        (insert-into! :user_course {:user_id user-id
+                                    :course_id course-id
+                                    :status "STARTED"})))
 
 (defn set-user-progress!
   "Update or create user progress record with specific status"

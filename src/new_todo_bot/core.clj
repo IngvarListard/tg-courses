@@ -49,12 +49,12 @@
 
   (loop [run @run?]
     (when run
-      (let [ch (p/start token (exception-middleware handler))]
-        (reset! current-chan ch)
-        (let [res (<!! ch)]
-          (prn "Channel closed. Sleeping for 5sec. Result: " res)
-          (<!! (timeout 5000))
-          (recur @run?))))))
+      (let [ch (p/start token (exception-middleware handler))
+            _ (reset! current-chan ch)
+            res (<!! ch)]
+        (prn "Channel closed. Sleeping for 5sec. Result: " res)
+        (<!! (timeout 5000))
+        (recur @run?)))))
 
 (defn restart-app
   []

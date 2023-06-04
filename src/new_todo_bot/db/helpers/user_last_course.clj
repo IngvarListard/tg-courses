@@ -37,13 +37,13 @@
                  :where  [:= :course_elements.id el-id]}))
 
 (defn get-last-course-desc
-  [tg-user-id]
-  (when-let [{:keys [element_id element_type]} (-> tg-user-id get-last-course first)]
-    (let [get-keys (fn [el] (select-keys el [:author :display_name]))]
-      (println element_type)
-      (condp = element_type
-        const/course-type (->> {:id element_id} (get-by TCourses) first get-keys)
-        const/element-type (->> element_id get-course-display-name-by-element-id first get-keys)))))
+    [tg-user-id]
+    (when-let [{:keys [element_id element_type]} (-> tg-user-id get-last-course first)]
+      (let [ks [:author :display_name]]
+        (println element_type)
+        (condp = element_type
+          const/course-type (->> {:id element_id} (get-by TCourses) first (select-keys ks))
+          const/element-type (->> element_id get-course-display-name-by-element-id first (select-keys ks))))))
 
 (defmulti get-next-course
           (fn [_ element-id] element-id))

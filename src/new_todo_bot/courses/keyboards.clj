@@ -53,27 +53,26 @@
       (kb/new-button "⬇️ Получить все файлы текущей директории", callback))))
 
 (defn build-course-kb
-  [& {:keys [course-id parent-id page-number page-size get-content] :as args
-      :or   {page-number 1 page-size const/default-page-size get-content get-course-content}}]
-  (let [get-content-partial (fn [& {:keys [return-count?] :as params}]
-                              (let [prefixed-args (select-keys args [:course-id :parent-id])
-                                    all-params (merge prefixed-args params)
-                                    params-as-vector (into [] cat all-params)]
-                                (apply get-content params-as-vector)))
-        pager (new-pager page-number page-size get-content-partial)
-        elements (get-page-data pager)
-        get-type #(rename-keys (select-keys % [:entity]) {:entity :type})
-        build-elements-buttons #(kb/new-line (new-node-button % "get_item" :payload (get-type %)))
-        elements-buttons (map build-elements-buttons elements)
-        documents (some #{const/document-type} (map :entity elements))
-        navigation-buttons (kb/new-line (new-pagination-button (.get-prev-page-number pager) "⬅️" parent-id course-id)
-                                        (new-dir-up-button parent-id)
-                                        (new-pagination-button (.get-next-page-number pager) "➡️" parent-id course-id))
-        download-all-files-button (when (some? documents)
-                                    (-> (new-download-all-files-button parent-id course-id)
-                                        (kb/new-line)))
-        lines (concat
-                elements-buttons
-                (when navigation-buttons [navigation-buttons])
-                (when download-all-files-button [download-all-files-button]))]
-    lines))
+    [& {:keys [course-id parent-id page-number page-size get-content] :as args
+        :or   {page-number 1 page-size const/default-page-size get-content get-course-content}}]
+    (letfn [(get-content-partial [& {:as params}]
+              (let [prefixed-args (select-keys args [:course-id :parent-id])
+                    all-params (merge prefixed-args params)
+                    params-as-vector (into [] cat all-params)]
+                (apply get-content params-as-vector)))
+            (get-type [m]
+              (rename-keys (select-keys m [:entity]) {:entity :type}))
+            (build-elements-buttons [x]
+              (kb/new-line (new-node-button x "get_item" :payload (get-type x))))]
+      (let [pager (new-pager page-number page-size get-content-partial)
+            elements (get-page-data pager)
+            navigation-buttons (kb/new-line (new-pagination-button (.get-prev-page-number pager) "⬅️" parent-id course-id)
+                                            (new-dir-up-button parent-id)
+                                            (new-pagination-button (.get-next-page-number pager) "➡️" parent-id course-id))
+            download-all-files-button (when (some #{const/document-type} (map :entity elements))
+                                        (-> (new-download-all-files-button parent-id course-id)
+                                            (kb/new-line)))]
+        (cond-> (mapv build-elements-buttons elements)
+                navigation-buttons (conj navigation-buttons)
+                download-all-files-button (conj download-all-files-button)))))
+

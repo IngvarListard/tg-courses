@@ -61,16 +61,14 @@
     tree))
 
 (defn render-course-structure
-  "Отрисовка структуры курса в текстовом формате"
-  ([root-] (render-course-structure root- ""))
-  ([root- ident]
-   (let [icon (if (some? (:type root-))
-                (get icons (:type root-))
-                (get icons "folder"))
-         new-line [(str ident icon (:display_name root-))]
-         ident (if (s/blank? ident) "└ " (str "     " ident))
-         new-lines (map #(render-course-structure % ident) (:children root-))]
-     (flatten (concat new-line new-lines)))))
+    "Отрисовка структуры курса в текстовом формате"
+    ([root-] (render-course-structure root- ""))
+    ([root- ident]
+     (let [icon (get icons (:type root- "folder"))
+           new-line [(str ident icon (:display_name root-))]
+           ident (if (s/blank? ident) "└ " (str "     " ident))
+           new-lines (map #(render-course-structure % ident) (:children root-))]
+       (flatten (concat new-line new-lines)))))
 
 (defmulti send-item
           (fn [typ token chat-id element-id send-keyboard] typ))

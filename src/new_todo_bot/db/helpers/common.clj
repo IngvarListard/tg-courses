@@ -92,8 +92,7 @@
 
   (get-page-data
     [_]
-    (let [_ (println "get-page-data" " page-number " page-number " page-size " page-size)
-          offset (* (dec page-number) page-size)]
+    (let [offset (* (dec page-number) page-size)]
       (get-data-func :offset offset :limit page-size)))
 
   (get-total-count [_] total-count)
@@ -115,10 +114,10 @@
 
 (defn new-pager
   [page-number page-size get-data-func]
-  (let [total-count (:count (get-data-func :return-count? true))
-        page-number (or page-number 1)
-        page-size (or page-size const/default-page-size)]
-    (->Pager page-number page-size get-data-func total-count)))
+  (->Pager (or page-number 1)
+           (or page-size const/default-page-size)
+           get-data-func
+           (:count (get-data-func :return-count? true))))
 
 (defn apply-map
   [f & {:keys [] :as kwargs}]
