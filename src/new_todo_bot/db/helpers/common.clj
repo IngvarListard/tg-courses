@@ -51,7 +51,6 @@
                  :set       object
                  :where     where
                  :returning (:fields t&f)}]
-    (println sql-map)
     (db :execute! sql-map {:multi-rs multi?})))
 
 (defn insert-into!
@@ -101,6 +100,8 @@
     [_]
     (println "total count " total-count)
     (let [last-page-number (quot total-count const/default-page-size)
+          reminder (rem total-count const/default-page-size)
+          last-page-number (if (zero? reminder) last-page-number (+ last-page-number 1))
           next-page (inc page-number)]
       (if (> next-page last-page-number)
         nil

@@ -71,6 +71,7 @@
             download-all-files-button (when (some #{const/document-type} (map :entity elements))
                                         (-> (new-download-all-files-button parent-id course-id)
                                             (kb/new-line)))]
+        (println "navigation buttons" navigation-buttons)
         (cond-> (mapv build-elements-buttons elements)
                 navigation-buttons (conj navigation-buttons)
                 download-all-files-button (conj download-all-files-button)))))

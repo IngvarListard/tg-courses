@@ -31,8 +31,8 @@
 (defn get-course-content
   [& {:keys [course-id parent-id offset limit return-count?] :as args}]
   (let [where (build-where-cond (select-keys args [:course-id :parent-id]))
-        select (if return-count? [:%count.*] [:id :display_name :type :entity])
-        sqlmap (merge {:select select
+        ;select (if return-count? [:%count.*] [:id :display_name :type :entity])
+        sqlmap (merge {:select [:id :display_name :type :entity]
                        :from   [[{:union-all [{:select [:id
                                                         :display_name
                                                         :course_id
@@ -49,12 +49,13 @@
                                                         [1 :typed_order]
                                                         :type
                                                         [const/document-type :entity]
-                                                        [nil :sort]]
+                                                        :sort]
                                                :from   :documents}]} :d]]
                        :where  where}
                       (when (not return-count?) {:order-by [:typed_order :sort]})
                       (when offset {:offset offset})
                       (when limit {:limit limit}))
+        sqlmap (if return-count? {:select [:%count.*] :from [[sqlmap "s"]]} sqlmap)
         result (db :execute! sqlmap)]
     (if return-count? (first result) result)))
 
