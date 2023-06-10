@@ -1,5 +1,6 @@
 (ns new-todo-bot.common.utils
-  (:require [clojure.string :as s]))
+  (:require [clojure.string :as s]
+            [new-todo-bot.telegram.utils :as tu]))
 (defn parse-int
   [s]
   (try
@@ -21,8 +22,12 @@
   ([url] (md-link url url))
   ([url text]
    (cond-> text
-           (not= text url) (s/replace filter-letters-only "")
+           text (tu/escape-md2)
            :always (#(format "[%s](%s)" % url)))))
+
+(defn md-bold
+  [text]
+  (format "*%s*" (tu/escape-md2 text)))
 
 (comment
   (md-link "http://asdfas.com")

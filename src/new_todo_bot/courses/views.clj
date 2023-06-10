@@ -18,7 +18,8 @@
             [new-todo-bot.telegram.keyboards :as kb]
             [new-todo-bot.telegram.senders :as ts]
             [ring.util.codec :refer [form-decode form-encode]]
-            [wkok.openai-clojure.api :as gpt-api]))
+            [wkok.openai-clojure.api :as gpt-api]
+            [new-todo-bot.telegram.utils :as tu]))
 
 ;; Commands
 
@@ -86,13 +87,12 @@
         {:keys [author display_name source_url description]} course
         course-structure-col (c/build-course-structure id)
         course-structure-text (reduce into [] (map c/render-course-structure course-structure-col))
-        structure (u/remove-spec-chars (s/join "\n" course-structure-text))
-        text (str "Курс: " display_name "\n"
-                  (when author (str "Автор: " author "\n"))
+        structure (s/join "\n" course-structure-text)
+        text (str "Курс: " (tu/escape-md2 display_name) "\n"
+                  (when author (str "Автор: " (tu/escape-md2 author) "\n"))
                   (when source_url (str "Источник: " (u/md-link source_url "YouTube") "\n"))
                   (when description (str "Описание: " description "\n\n"))
-                  structure
-                  )
+                  (tu/escape-md2 structure))
         ;; Ограничение в tg bot api больше ~4000 символов нельзя
         cropped-text* (if (> (count text) 4000)
               (-> text
@@ -100,7 +100,7 @@
                   (s/split #"\n")
                   (drop-last)
                   (#(s/join "\n" %))
-                  (str "\n..."))
+                  (str (tu/escape-md2 "\n...")))
               text)
         start-course-button (kb/single-button-kb "Начать изучение" (form-encode {:url "start_course" :id id}))]
     (ts/send-keyboard token (:id chat) cropped-text* start-course-button)))
@@ -154,7 +154,7 @@
     (when-let [videos (get documents-grouped "external-video")]
       (->> (map #(str (u/md-link (:url %) (:display_name %))) videos)
           (s/join "\n")
-          (t/send-text token (:id chat) {:parse_mode "markdown"})))
+          (t/send-text token (:id chat) {:parse_mode "MarkdownV2"})))
     (go (doseq [doc (apply concat (vals (select-keys documents-grouped ["audio" "file"])))]
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))

@@ -11,7 +11,8 @@
             [toucan.db :as db]
             [new-todo-bot.courses.keyboards :refer [build-course-kb]]
             [new-todo-bot.db.helpers.user-last-course :refer [update-user-last-course!]]
-            [new-todo-bot.db.helpers.users :refer [TUser]]))
+            [new-todo-bot.db.helpers.users :refer [TUser]]
+            [new-todo-bot.telegram.utils :as tu]))
 
 (def ^:const icons
   {"file"   "\uD83D\uDCC4 "
@@ -79,8 +80,8 @@
   (let [document (get-one-by TDocuments {:id element-id})
         {:keys [url display_name tg_file_id type description]} document]
     (if (= type const/external-video-type)
-      (t/send-text token chat-id {:parse_mode "markdown"} (cond-> (u/md-link url display_name)
-                                                                  description (str (u/remove-spec-chars description))))
+      (t/send-text token chat-id {:parse_mode "MarkdownV2"} (cond-> (u/md-link url display_name)
+                                                                  description (str "\n" (tu/escape-md2 description))))
       (t/send-document token chat-id tg_file_id))))
 
 (defmethod send-item
@@ -90,7 +91,7 @@
         text (->> (get-one-by [TCourseElements :display_name] {:id element-id})
                   :display_name
                   (str kb-text))]
-    (send-keyboard token chat-id text :parent-id element-id)))
+    (send-keyboard token chat-id (tu/escape-md2 text) :parent-id element-id)))
 
 (defmethod send-item
   const/course-type
@@ -99,7 +100,7 @@
         text (->> (get-one-by [TCourses :display_name] {:id element-id})
                   :display_name
                   (str kb-text))]
-    (send-keyboard token chat-id text :course-id element-id :parent-id nil)))
+    (send-keyboard token chat-id (tu/escape-md2 text) :course-id element-id :parent-id nil)))
 
 (defn get-item-
   [token chat-id element-id type- & {:keys [page-number page-size send-keyboard]
