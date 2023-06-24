@@ -31,7 +31,7 @@
 
 (defn get-course-display-name-by-element-id
   [el-id]
-  (db :execute! {:select [:id :display_name]
+  (db :execute! {:select [:courses.id :courses.display_name]
                  :from   TCourses
                  :join   [:course_elements [:= :courses.id :course_elements.course_id]]
                  :where  [:= :course_elements.id el-id]}))

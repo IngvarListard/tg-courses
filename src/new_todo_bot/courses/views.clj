@@ -61,7 +61,7 @@
                           {:role "user" :content text}]}
               {:api-key gpt-token})
           r-text (-> r :choices first :message :content)]
-      (t/send-text token id r-text))
+      (t/send-text token id {:parse_mode "html"} (pth/md->html r-text)))
     (t/send-text token id "you sent nothing")))
 
 ;; Callbacks
