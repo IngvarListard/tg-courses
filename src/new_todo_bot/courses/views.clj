@@ -19,7 +19,8 @@
             [new-todo-bot.telegram.senders :as ts]
             [ring.util.codec :refer [form-decode form-encode]]
             [wkok.openai-clojure.api :as gpt-api]
-            [new-todo-bot.telegram.utils :as tu]))
+            [new-todo-bot.telegram.utils :as tu]
+            [new-todo-bot.telegram.plain-to-html :as pth]))
 
 ;; Commands
 
@@ -95,15 +96,15 @@
                   (tu/escape-md2 structure))
         ;; Ограничение в tg bot api больше ~4000 символов нельзя
         cropped-text* (if (> (count text) 4000)
-              (-> text
-                  (subs 0 4000)
-                  (s/split #"\n")
-                  (drop-last)
-                  (#(s/join "\n" %))
-                  (str (tu/escape-md2 "\n...")))
-              text)
+                        (-> text
+                            (subs 0 4000)
+                            (s/split #"\n")
+                            (drop-last)
+                            (#(s/join "\n" %))
+                            (str (tu/escape-md2 "\n...")))
+                        text)
         start-course-button (kb/single-button-kb "Начать изучение" (form-encode {:url "start_course" :id id}))]
-    (ts/send-keyboard token (:id chat) cropped-text* start-course-button)))
+    (ts/send-keyboard token (:id chat) (pth/md->html cropped-text*) start-course-button)))
 
 (defn start-course
   "Создает для пользователя запись прогресса, возвращает
@@ -153,8 +154,9 @@
         documents-grouped (group-by :type documents)]
     (when-let [videos (get documents-grouped "external-video")]
       (->> (map #(str (u/md-link (:url %) (:display_name %))) videos)
-          (s/join "\n")
-          (t/send-text token (:id chat) {:parse_mode "MarkdownV2"})))
+           (s/join "\n")
+           (pth/md->html)
+           (t/send-text token (:id chat) {:parse_mode "html"})))
     (go (doseq [doc (apply concat (vals (select-keys documents-grouped ["audio" "file"])))]
           (t/send-document token (:id chat) (:tg_file_id doc))
           (<! (timeout 1000))))))

@@ -21,7 +21,8 @@
                  [org.clojure/tools.logging "1.2.4"]
                  [io.github.matthewdowney/rich-comment-tests "v1.0.3"]
                  [net.clojars.wkok/openai-clojure "0.6.0"]
-                 [failjure "2.3.0"]]
+                 [failjure "2.3.0"]
+                 [markdown-clj "1.11.4"]]
 
   :plugins [[lein-environ "1.2.0"]
             [migratus-lein "0.7.3"]
